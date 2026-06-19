@@ -46,24 +46,31 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
   const results = {};
   const artifacts = {};
 
-  const targetDir = workDir || require('os').homedir();
+  const targetDir = workDir || __dirname;
+  const TIMEOUT_MS = 5 * 60 * 1000;
 
-  // 并行执行
   const promises = toolIds.map(async (toolId) => {
-    fileTracker.snapshot(toolId, targetDir);
-
     const adapter = registry.get(toolId);
     if (!adapter) { results[toolId] = { error: `Unknown tool: ${toolId}` }; return; }
 
+    // 快照和工具启动并行执行
+    const snapshotPromise = targetDir ? fileTracker.snapshot(toolId, targetDir) : Promise.resolve();
+
     try {
-      const result = await adapter.run(content, workDir, (chunk) => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('stream-chunk', { toolId, chunk });
-        }
-      });
-      log(`${toolId} done, code=${result.exitCode}`);
+      const result = await Promise.race([
+        adapter.run(content, workDir || targetDir, (chunk) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('stream-chunk', { toolId, chunk });
+          }
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)),
+      ]);
+
+      log(`${toolId} done, code=${result.exitCode}, content=${(result.content || '').substring(0, 100)}`);
       results[toolId] = result;
-      artifacts[toolId] = fileTracker.diff(toolId, targetDir);
+
+      await snapshotPromise;
+      artifacts[toolId] = await fileTracker.diff(toolId, targetDir);
     } catch (err) {
       log(`${toolId} error: ${err.message}`);
       results[toolId] = { error: err.message };

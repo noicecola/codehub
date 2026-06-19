@@ -27,7 +27,7 @@ class ToolAdapter {
     const parser = new StreamParser(this.streamParser);
     let fullContent = '';
 
-    const result = await this.transport.send(message, {
+    const sendOptions = {
       workDir,
       onStdout: (data) => {
         const texts = parser.feed(data);
@@ -36,10 +36,22 @@ class ToolAdapter {
           if (onChunk) onChunk(t);
         });
       },
-      onStderr: () => {},
-    });
+      onStderr: (data) => {
+        const texts = parser.feed(data);
+        texts.forEach(t => {
+          fullContent += t;
+          if (onChunk) onChunk(t);
+        });
+      },
+    };
 
-    // 处理buffer剩余
+    // 内置适配器在 run 时动态设置工作目录参数
+    if (this._prepareArgs) {
+      this._prepareArgs(workDir);
+    }
+
+    const result = await this.transport.send(message, sendOptions);
+
     const remaining = parser.flush();
     remaining.forEach(t => {
       fullContent += t;
@@ -57,7 +69,7 @@ class ToolAdapter {
 // === 内置适配器工厂 ===
 
 function createClaudeCodeAdapter() {
-  return new ToolAdapter({
+  const adapter = new ToolAdapter({
     id: 'claude-code',
     name: 'Claude Code',
     transport: new CLITransport('claude', [
@@ -65,6 +77,18 @@ function createClaudeCodeAdapter() {
     ]),
     streamParser: new ClaudeParser(),
   });
+
+  // 动态添加 --add-dir 参数
+  adapter._prepareArgs = function(workDir) {
+    if (workDir) {
+      this.transport.args = [
+        '--print', '--verbose', '--output-format', 'stream-json',
+        '--add-dir', workDir,
+      ];
+    }
+  };
+
+  return adapter;
 }
 
 function createMimoCodeAdapter() {

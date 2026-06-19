@@ -3,45 +3,48 @@ const path = require('path');
 
 class FileTracker {
   constructor() {
-    this.snapshots = new Map(); // toolId -> Set of file paths
+    this.snapshots = new Map();
   }
 
-  // 执行前快照
-  snapshot(toolId, dir) {
+  async snapshot(toolId, dir) {
     if (!dir || !fs.existsSync(dir)) {
       this.snapshots.set(toolId, new Map());
       return;
     }
-    const files = this.walkDirWithStats(dir);
+    const files = await this.walkDirWithStats(dir);
     this.snapshots.set(toolId, files);
   }
 
-  walkDirWithStats(dir, prefix = '') {
+  async walkDirWithStats(dir, prefix = '', depth = 0) {
     const results = new Map();
+    // 限制扫描深度，避免递归到底
+    if (depth > 5) return results;
+
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
         if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === '__pycache__') continue;
+        const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
         const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          for (const [k, v] of this.walkDirWithStats(fullPath, relPath)) {
-            results.set(k, v);
+
+        try {
+          if (entry.isDirectory()) {
+            const sub = await this.walkDirWithStats(fullPath, relPath, depth + 1);
+            for (const [k, v] of sub) results.set(k, v);
+          } else {
+            const stat = this.safeStat(fullPath);
+            results.set(relPath, stat ? stat.mtimeMs : 0);
           }
-        } else {
-          const stat = this.safeStat(fullPath);
-          results.set(relPath, stat ? stat.mtimeMs : 0);
-        }
+        } catch {}
       }
     } catch {}
     return results;
   }
 
-  // 执行后对比，返回变更文件列表
-  diff(toolId, dir) {
+  async diff(toolId, dir) {
     if (!dir || !fs.existsSync(dir)) return [];
     const before = this.snapshots.get(toolId) || new Map();
-    const after = this.walkDirWithStats(dir);
+    const after = await this.walkDirWithStats(dir);
 
     const changed = [];
     for (const [f, afterMtime] of after) {
@@ -61,30 +64,10 @@ class FileTracker {
     return changed;
   }
 
-  walkDir(dir, prefix = '') {
-    const results = [];
-    try {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
-        // 跳过隐藏文件和node_modules
-        if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === '__pycache__') continue;
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          results.push(...this.walkDir(fullPath, relPath));
-        } else {
-          results.push(relPath);
-        }
-      }
-    } catch {}
-    return results;
-  }
-
   safeStat(filePath) {
     try { return fs.statSync(filePath); } catch { return null; }
   }
 
-  // 读取文件内容
   readFile(dir, relPath) {
     try {
       return fs.readFileSync(path.join(dir, relPath), 'utf8');
