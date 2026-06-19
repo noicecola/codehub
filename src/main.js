@@ -165,21 +165,31 @@ ipcMain.handle('delete-template', (event, id) => {
 // === 会话 ===
 
 ipcMain.handle('list-sessions', () => sessionManager.listSessions());
+
+ipcMain.handle('get-latest-session', () => {
+  const session = sessionManager.getLatestSession();
+  if (session) currentSessionId = session.id;
+  return session;
+});
+
 ipcMain.handle('create-session', (event, name) => {
   const s = sessionManager.createSession(name);
   currentSessionId = s.id;
   return s;
 });
+
 ipcMain.handle('load-session', (event, id) => {
   const s = sessionManager.loadSession(id);
   if (s) currentSessionId = id;
   return s;
 });
+
 ipcMain.handle('delete-session', (event, id) => {
   const r = sessionManager.deleteSession(id);
   if (currentSessionId === id) currentSessionId = null;
   return r;
 });
+
 ipcMain.handle('get-current-session-id', () => currentSessionId);
 
 // === 目录 ===

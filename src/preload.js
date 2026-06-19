@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('codehub', {
   deleteTemplate: (id) => ipcRenderer.invoke('delete-template', id),
 
   listSessions: () => ipcRenderer.invoke('list-sessions'),
+  getLatestSession: () => ipcRenderer.invoke('get-latest-session'),
   createSession: (name) => ipcRenderer.invoke('create-session', name),
   loadSession: (id) => ipcRenderer.invoke('load-session', id),
   deleteSession: (id) => ipcRenderer.invoke('delete-session', id),

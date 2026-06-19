@@ -28,6 +28,12 @@ class SessionManager {
     }).sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
+  getLatestSession() {
+    const sessions = this.listSessions();
+    if (sessions.length === 0) return null;
+    return this.loadSession(sessions[0].id);
+  }
+
   createSession(name) {
     const id = `session_${Date.now()}`;
     const session = {
@@ -66,12 +72,25 @@ class SessionManager {
   addMessage(sessionId, message) {
     const session = this.loadSession(sessionId);
     if (!session) return null;
+
+    // 按工具区分存储
+    const toolOutputs = {};
+    for (const [toolId, result] of Object.entries(message.toolResults || {})) {
+      toolOutputs[toolId] = {
+        content: result.content || '',
+        exitCode: result.exitCode || 0,
+        error: result.error || null,
+      };
+    }
+
     session.messages.push({
       id: `msg_${Date.now()}`,
       content: message.content,
       timestamp: Date.now(),
-      toolResults: message.toolResults || {},
+      toolOutputs,
+      artifacts: message.artifacts || {},
     });
+
     return this.saveSession(session);
   }
 }

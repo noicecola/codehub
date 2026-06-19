@@ -11,8 +11,7 @@ async function init() {
   const tools = await window.codehub.getTools();
   renderToolSelector(tools);
   setupEventListeners();
-  await refreshSessionList();
-  await autoCreateSession();
+  await loadOrCreateSession();
 }
 
 // === 工具选择 ===
@@ -114,13 +113,20 @@ async function sendMessage() {
   const input = document.getElementById('message-input');
   const content = input.value.trim();
   if (!content || selectedTools.size === 0) return;
+  if (!currentSessionId) return;
+
   isRunning = true;
   updateSendButton();
   document.getElementById('send-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'inline-block';
-  initOutputPanel();
+
+  // 追加用户消息到面板
+  appendUserMessage(content);
+  initToolColumns();
+
   selectedTools.forEach(id => updateToolStatus(id, 'running'));
   const workDir = currentWorkDir || document.getElementById('work-dir-select').value || '';
+
   try {
     const { results, artifacts } = await window.codehub.broadcastMessage({
       content, toolIds: Array.from(selectedTools), workDir,
@@ -131,11 +137,15 @@ async function sendMessage() {
       Object.values(lastArtifacts).some(a => a?.length > 0) ? 'inline-block' : 'none';
     selectedTools.forEach(id => updateToolStatus(id, 'completed'));
   } catch { selectedTools.forEach(id => updateToolStatus(id, 'error')); }
+
   isRunning = false;
   updateSendButton();
   document.getElementById('send-btn').style.display = 'inline-block';
   document.getElementById('stop-btn').style.display = 'none';
   input.value = '';
+
+  // 刷新会话列表（消息数更新）
+  await refreshSessionList();
 }
 
 function stopAll() {
@@ -148,10 +158,23 @@ function stopAll() {
 
 // === 输出面板 ===
 
-function initOutputPanel() {
+function appendUserMessage(content) {
   const panel = document.getElementById('output-panel');
-  panel.innerHTML = '<div class="output-grid"></div>';
-  const grid = panel.querySelector('.output-grid');
+  // 如果是欢迎界面，先清空
+  if (panel.querySelector('#welcome-screen')) {
+    panel.innerHTML = '';
+  }
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'history-message';
+  msgDiv.innerHTML = `<div class="msg-user"><strong>你:</strong> ${esc(content)}</div>`;
+  panel.appendChild(msgDiv);
+  scrollToBottom();
+}
+
+function initToolColumns() {
+  const panel = document.getElementById('output-panel');
+  const grid = document.createElement('div');
+  grid.className = 'output-grid current-output';
   selectedTools.forEach(id => {
     const col = document.createElement('div');
     col.className = 'output-column';
@@ -162,6 +185,8 @@ function initOutputPanel() {
       <div class="output-content waiting" id="output-${id}">等待输入...</div>`;
     grid.appendChild(col);
   });
+  panel.appendChild(grid);
+  scrollToBottom();
 }
 
 function appendToOutput(toolId, text) {
@@ -169,7 +194,7 @@ function appendToOutput(toolId, text) {
   if (!el) return;
   if (el.classList.contains('waiting')) { el.textContent = ''; el.classList.remove('waiting'); }
   el.textContent += text;
-  el.scrollTop = el.scrollHeight;
+  scrollToBottom();
 }
 
 function updateToolStatus(toolId, status) {
@@ -178,6 +203,16 @@ function updateToolStatus(toolId, status) {
   el.className = `tool-status ${status}`;
   const labels = { idle: '就绪', running: '运行中', completed: '完成', error: '错误' };
   el.textContent = labels[status] || status;
+}
+
+function scrollToBottom() {
+  const panel = document.getElementById('output-panel');
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function clearOutput() {
+  document.getElementById('output-panel').innerHTML = `
+    <div id="welcome-screen"><h2>CodeHub</h2><p>多工具消息分发桌面端</p><p class="hint">选择工具 → 输入消息 → 同时发送</p></div>`;
 }
 
 // === 产物浏览 ===
@@ -363,6 +398,20 @@ async function browseDirectory() {
 
 // === 会话管理 ===
 
+async function loadOrCreateSession() {
+  const session = await window.codehub.getLatestSession();
+  if (session) {
+    currentSessionId = session.id;
+    await refreshSessionList();
+    renderSessionHistory(session);
+  } else {
+    const s = await window.codehub.createSession();
+    currentSessionId = s.id;
+    await refreshSessionList();
+    clearOutput();
+  }
+}
+
 async function refreshSessionList() {
   const sessions = await window.codehub.listSessions();
   const list = document.getElementById('session-list');
@@ -380,14 +429,6 @@ async function refreshSessionList() {
     item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
     list.appendChild(item);
   });
-}
-
-async function autoCreateSession() {
-  if (!currentSessionId) {
-    const s = await window.codehub.createSession();
-    currentSessionId = s.id;
-    await refreshSessionList();
-  }
 }
 
 async function createNewSession() {
@@ -408,8 +449,12 @@ async function loadSession(id) {
 
 async function deleteSession(id) {
   await window.codehub.deleteSession(id);
-  if (currentSessionId === id) { currentSessionId = null; await autoCreateSession(); clearOutput(); }
-  await refreshSessionList();
+  if (currentSessionId === id) {
+    currentSessionId = null;
+    await loadOrCreateSession();
+  } else {
+    await refreshSessionList();
+  }
 }
 
 function renderSessionHistory(session) {
@@ -421,9 +466,11 @@ function renderSessionHistory(session) {
   let html = '';
   session.messages.forEach(msg => {
     html += `<div class="history-message"><div class="msg-user"><strong>你:</strong> ${esc(msg.content)}</div>`;
-    if (msg.toolResults) {
-      for (const [toolId, result] of Object.entries(msg.toolResults)) {
-        html += `<div class="msg-tool"><strong>${toolId}:</strong> <pre>${esc(result.content || result.error || '(无输出)')}</pre></div>`;
+    if (msg.toolOutputs) {
+      for (const [toolId, output] of Object.entries(msg.toolOutputs)) {
+        const content = output.error || output.content || '(无输出)';
+        const isError = output.error ? ' style="color:var(--danger)"' : '';
+        html += `<div class="msg-tool"><strong>${toolId}:</strong> <pre${isError}>${esc(content)}</pre></div>`;
       }
     }
     if (msg.artifacts) {
@@ -433,11 +480,7 @@ function renderSessionHistory(session) {
     html += '</div>';
   });
   panel.innerHTML = html;
-}
-
-function clearOutput() {
-  document.getElementById('output-panel').innerHTML = `
-    <div id="welcome-screen"><h2>CodeHub</h2><p>多工具消息分发桌面端</p><p class="hint">选择工具 → 输入消息 → 同时发送</p></div>`;
+  scrollToBottom();
 }
 
 // === 工具函数 ===
