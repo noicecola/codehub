@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeHub</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <button id="sidebar-toggle-btn" class="sidebar-toggle" title="折叠">◀</button>
+        <h2>CodeHub</h2>
+        <button id="new-session-btn" title="新建会话">+</button>
+      </div>
+      <div id="session-list"></div>
+      <div class="sidebar-footer">
+        <button id="manage-tools-btn" class="sidebar-tool-btn">⚙️ 工具</button>
+        <button id="manage-templates-btn" class="sidebar-tool-btn">📝 模板</button>
+      </div>
+    </aside>
+
+    <div id="main">
+      <header id="toolbar">
+        <div id="toolbar-actions">
+          <div id="template-dropdown" class="dropdown hidden">
+            <div id="template-list"></div>
+          </div>
+          <button id="template-btn" class="tool-btn" title="消息模板">📝</button>
+          <button id="artifacts-btn" class="tool-btn" title="产物" style="display:none">📦</button>
+          <button id="compare-btn" class="tool-btn" title="对比">对比</button>
+          <button id="export-btn" class="tool-btn" title="导出">💾</button>
+          <select id="work-dir-select"><option value="">目录</option></select>
+          <button id="browse-dir-btn" class="tool-btn" title="选择目录">📁</button>
+        </div>
+      </header>
+
+      <main id="output-panel">
+        <div id="welcome-screen">
+          <h2>CodeHub</h2>
+          <p>多工具消息分发桌面端</p>
+          <p class="hint">选择工具 → 输入消息 → 同时发送给多个coding工具</p>
+          <div class="tips">
+            <span>Ctrl+Enter 发送</span>
+            <span>|</span>
+            <span>左侧管理会话</span>
+          </div>
+        </div>
+      </main>
+
+      <footer id="input-area">
+        <div id="tool-selector"></div>
+        <textarea id="message-input" placeholder="输入消息... (Ctrl+Enter 发送)" rows="2"></textarea>
+        <div id="input-controls">
+          <div id="selected-tools-info"></div>
+          <div id="input-buttons">
+            <button id="send-btn" disabled>发送</button>
+            <button id="stop-btn" style="display:none">停止</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- 弹窗 -->
+    <div id="compare-modal" class="modal hidden">
+      <div class="modal-content"><div class="modal-header"><h3>结果对比</h3><button class="close-btn" data-close="compare-modal">&times;</button></div><div id="compare-content"></div></div>
+    </div>
+    <div id="artifacts-modal" class="modal hidden">
+      <div class="modal-content modal-wide"><div class="modal-header"><h3>产物浏览</h3><button class="close-btn" data-close="artifacts-modal">&times;</button></div><div id="artifacts-content"><div class="artifacts-layout"><div id="artifacts-file-list"></div><div id="artifacts-file-content"><p class="placeholder">选择文件查看内容</p></div></div></div></div>
+    </div>
+    <div id="export-modal" class="modal hidden">
+      <div class="modal-content modal-narrow"><div class="modal-header"><h3>导出会话</h3><button class="close-btn" data-close="export-modal">&times;</button></div><div class="modal-body"><p>选择格式：</p><div class="export-options"><button class="export-option" data-format="markdown">📄 Markdown</button><button class="export-option" data-format="json">📋 JSON</button></div></div></div>
+    </div>
+    <div id="tools-modal" class="modal hidden">
+      <div class="modal-content modal-narrow"><div class="modal-header"><h3>工具管理</h3><button class="close-btn" data-close="tools-modal">&times;</button></div><div class="modal-body"><div id="tools-list"></div><div class="add-tool-form"><h4>添加自定义工具</h4><input id="tool-name-input" placeholder="名称" /><input id="tool-command-input" placeholder="命令 (如 python3)" /><input id="tool-args-input" placeholder="参数 (可选)" /><button id="add-tool-btn" class="primary-btn">添加</button></div></div></div>
+    </div>
+    <div id="templates-modal" class="modal hidden">
+      <div class="modal-content modal-narrow"><div class="modal-header"><h3>模板管理</h3><button class="close-btn" data-close="templates-modal">&times;</button></div><div class="modal-body"><div id="templates-list"></div><div class="add-template-form"><h4>添加模板</h4><input id="tpl-name-input" placeholder="名称" /><textarea id="tpl-content-input" placeholder="内容" rows="2"></textarea><button id="add-tpl-btn" class="primary-btn">添加</button></div></div></div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

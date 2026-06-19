@@ -1,0 +1,13 @@
+{
+  "name": "codehub",
+  "version": "1.0.0",
+  "description": "Multi-tool message dispatch desktop app",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0"
+  }
+}

@@ -1,0 +1,89 @@
+// === Parser 层 ===
+// 统一解析不同工具的输出格式
+
+class JSONLineParser {
+  // 解析每行JSON，提取文本内容
+  parseLine(line) {
+    try {
+      const obj = JSON.parse(line);
+      return this.extract(obj);
+    } catch {
+      return null;
+    }
+  }
+
+  extract(obj) {
+    return null; // 子类实现
+  }
+}
+
+// Claude Code JSON解析器
+class ClaudeParser extends JSONLineParser {
+  extract(obj) {
+    if (obj.type === 'assistant' && obj.message?.content) {
+      for (const block of obj.message.content) {
+        if (block.type === 'text' && block.text) {
+          return block.text;
+        }
+      }
+    }
+    return null;
+  }
+}
+
+// MiMo Code JSON解析器
+class MimoParser extends JSONLineParser {
+  extract(obj) {
+    if (obj.type === 'text' && obj.part?.text) {
+      return obj.part.text;
+    }
+    return null;
+  }
+}
+
+// 纯文本解析器（直接输出文本的工具）
+class PlainTextParser extends JSONLineParser {
+  parseLine(line) {
+    return line; // 直接返回文本
+  }
+}
+
+// 流式解析器：处理缓冲区，按行分割
+class StreamParser {
+  constructor(lineParser) {
+    this.lineParser = lineParser;
+    this.buffer = '';
+  }
+
+  feed(data) {
+    this.buffer += data.toString();
+    const lines = this.buffer.split('\n');
+    this.buffer = lines.pop(); // 保留不完整的行
+
+    const results = [];
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const text = this.lineParser.parseLine(line);
+      if (text) results.push(text);
+    }
+    return results;
+  }
+
+  flush() {
+    if (this.buffer.trim()) {
+      const text = this.lineParser.parseLine(this.buffer);
+      this.buffer = '';
+      return text ? [text] : [];
+    }
+    this.buffer = '';
+    return [];
+  }
+}
+
+module.exports = {
+  JSONLineParser,
+  ClaudeParser,
+  MimoParser,
+  PlainTextParser,
+  StreamParser,
+};
