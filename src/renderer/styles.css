@@ -227,11 +227,10 @@ body {
 /* === 输出面板 === */
 #output-panel {
   flex: 1;
-  overflow-y: auto;
-  padding: 12px;
+  overflow: hidden;
+  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 #welcome-screen {
@@ -244,92 +243,103 @@ body {
   color: var(--text-secondary);
 }
 
+#welcome-screen.hidden { display: none; }
+
 #welcome-screen h2 { font-size: 22px; color: var(--text-primary); margin-bottom: 6px; }
 #welcome-screen .hint { margin-top: 10px; font-size: 13px; }
 #welcome-screen .tips { margin-top: 16px; font-size: 11px; color: var(--text-secondary); display: flex; gap: 8px; }
 
-.output-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 10px;
-  min-height: 200px;
-}
-
-.output-grid.current-output {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px;
-  background: var(--bg-secondary);
-}
-
-.history-message {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-secondary);
-}
-
-.history-message .msg-user {
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.history-message .msg-tool {
-  margin-top: 6px;
-  padding: 6px 10px;
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-}
-
-.history-message .msg-tool pre {
-  margin-top: 4px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.history-message .msg-artifacts {
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--accent);
-}
-
-.output-column {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+/* 双面板布局 */
+.tool-panels {
   display: flex;
-  flex-direction: column;
+  flex: 1;
+  gap: 1px;
+  background: var(--border);
   overflow: hidden;
 }
 
-.output-header {
+.tool-panels.hidden { display: none; }
+
+.tool-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  min-width: 0;
+}
+
+.tool-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 10px;
-  background: var(--bg-tertiary);
+  padding: 8px 14px;
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
-  font-weight: 600;
+  flex-shrink: 0;
 }
 
-.output-header .tool-name { display: flex; align-items: center; gap: 6px; }
+.tool-panel-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
 
-.output-content {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+.tool-panel-status {
   font-size: 11px;
-  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.tool-panel-status.status-running {
+  color: var(--warning);
+  animation: pulse 1s infinite;
+}
+
+.tool-panel-status.status-completed { color: var(--success); }
+.tool-panel-status.status-error { color: var(--danger); }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.tool-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.panel-user-msg {
+  color: var(--accent);
+  margin: 12px 0 6px 0;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+
+.panel-user-msg:first-child {
+  margin-top: 0;
+}
+
+.panel-reply {
   white-space: pre-wrap;
   word-break: break-word;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.15s ease;
 }
 
-.output-content.waiting { color: var(--text-secondary); font-style: italic; }
+.panel-reply:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.panel-reply-error {
+  color: var(--danger);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* === 状态指示 === */
 .status-dot {

@@ -120,11 +120,10 @@ async function sendMessage() {
   document.getElementById('send-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'inline-block';
 
-  // 追加用户消息到面板
+  // 追加用户消息到各面板
   appendUserMessage(content);
-  initToolColumns();
+  selectedTools.forEach(id => updatePanelStatus(id, 'running'));
 
-  selectedTools.forEach(id => updateToolStatus(id, 'running'));
   const workDir = currentWorkDir || document.getElementById('work-dir-select').value || '';
 
   try {
@@ -135,8 +134,18 @@ async function sendMessage() {
     lastArtifacts = artifacts || {};
     document.getElementById('artifacts-btn').style.display =
       Object.values(lastArtifacts).some(a => a?.length > 0) ? 'inline-block' : 'none';
-    selectedTools.forEach(id => updateToolStatus(id, 'completed'));
-  } catch { selectedTools.forEach(id => updateToolStatus(id, 'error')); }
+
+    // 完成各工具输出
+    for (const [toolId, result] of Object.entries(results)) {
+      finalizeOutput(toolId, result.content || result.error, !!result.error);
+      updatePanelStatus(toolId, result.error ? 'error' : 'completed');
+    }
+  } catch (err) {
+    selectedTools.forEach(id => {
+      finalizeOutput(id, err.message, true);
+      updatePanelStatus(id, 'error');
+    });
+  }
 
   isRunning = false;
   updateSendButton();
@@ -144,12 +153,14 @@ async function sendMessage() {
   document.getElementById('stop-btn').style.display = 'none';
   input.value = '';
 
-  // 刷新会话列表（消息数更新）
   await refreshSessionList();
 }
 
 function stopAll() {
-  selectedTools.forEach(id => { window.codehub.stopTool(id); updateToolStatus(id, 'idle'); });
+  selectedTools.forEach(id => {
+    window.codehub.stopTool(id);
+    updatePanelStatus(id, 'idle');
+  });
   isRunning = false;
   updateSendButton();
   document.getElementById('send-btn').style.display = 'inline-block';
@@ -158,61 +169,78 @@ function stopAll() {
 
 // === 输出面板 ===
 
-function appendUserMessage(content) {
-  const panel = document.getElementById('output-panel');
-  // 如果是欢迎界面，先清空
-  if (panel.querySelector('#welcome-screen')) {
-    panel.innerHTML = '';
-  }
-  const msgDiv = document.createElement('div');
-  msgDiv.className = 'history-message';
-  msgDiv.innerHTML = `<div class="msg-user"><strong>你:</strong> ${esc(content)}</div>`;
-  panel.appendChild(msgDiv);
-  scrollToBottom();
+function showToolPanels() {
+  document.getElementById('welcome-screen').classList.add('hidden');
+  document.getElementById('tool-panels').classList.remove('hidden');
 }
 
-function initToolColumns() {
-  const panel = document.getElementById('output-panel');
-  const grid = document.createElement('div');
-  grid.className = 'output-grid current-output';
-  selectedTools.forEach(id => {
-    const col = document.createElement('div');
-    col.className = 'output-column';
-    col.innerHTML = `
-      <div class="output-header">
-        <span class="tool-name"><span class="status-dot idle" id="status-${id}"></span>${id}</span>
-      </div>
-      <div class="output-content waiting" id="output-${id}">等待输入...</div>`;
-    grid.appendChild(col);
+function appendUserMessage(content) {
+  showToolPanels();
+  selectedTools.forEach(toolId => {
+    const panel = document.getElementById(`panel-content-${toolId}`);
+    if (!panel) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'panel-user-msg';
+    msgDiv.textContent = `> ${content}`;
+    panel.appendChild(msgDiv);
   });
-  panel.appendChild(grid);
-  scrollToBottom();
+  scrollAllPanels();
 }
 
 function appendToOutput(toolId, text) {
-  const el = document.getElementById(`output-${toolId}`);
-  if (!el) return;
-  if (el.classList.contains('waiting')) { el.textContent = ''; el.classList.remove('waiting'); }
-  el.textContent += text;
-  scrollToBottom();
+  const panel = document.getElementById(`panel-content-${toolId}`);
+  if (!panel) return;
+  // 查找或创建当前回复块
+  let reply = panel.querySelector('.panel-reply:last-child');
+  if (!reply || reply.dataset.done === 'true') {
+    reply = document.createElement('div');
+    reply.className = 'panel-reply';
+    panel.appendChild(reply);
+  }
+  reply.textContent += text;
+  scrollPanel(toolId);
 }
 
-function updateToolStatus(toolId, status) {
-  const el = document.getElementById(`status-${toolId}`);
-  if (!el) return;
-  el.className = `tool-status ${status}`;
-  const labels = { idle: '就绪', running: '运行中', completed: '完成', error: '错误' };
-  el.textContent = labels[status] || status;
+function finalizeOutput(toolId, content, isError) {
+  const panel = document.getElementById(`panel-content-${toolId}`);
+  if (!panel) return;
+  let reply = panel.querySelector('.panel-reply:last-child');
+  if (!reply) {
+    reply = document.createElement('div');
+    reply.className = 'panel-reply';
+    if (isError) reply.classList.add('panel-reply-error');
+    reply.textContent = content || '(无输出)';
+    panel.appendChild(reply);
+  } else {
+    reply.dataset.done = 'true';
+    if (isError) reply.classList.add('panel-reply-error');
+  }
+  scrollPanel(toolId);
 }
 
-function scrollToBottom() {
-  const panel = document.getElementById('output-panel');
-  panel.scrollTop = panel.scrollHeight;
+function updatePanelStatus(toolId, status) {
+  const el = document.getElementById(`panel-status-${toolId}`);
+  if (el) {
+    const labels = { idle: '就绪', running: '运行中...', completed: '完成', error: '错误' };
+    el.textContent = labels[status] || status;
+    el.className = `tool-panel-status status-${status}`;
+  }
+}
+
+function scrollPanel(toolId) {
+  const panel = document.getElementById(`panel-content-${toolId}`);
+  if (panel) panel.scrollTop = panel.scrollHeight;
+}
+
+function scrollAllPanels() {
+  selectedTools.forEach(id => scrollPanel(id));
 }
 
 function clearOutput() {
-  document.getElementById('output-panel').innerHTML = `
-    <div id="welcome-screen"><h2>CodeHub</h2><p>多工具消息分发桌面端</p><p class="hint">选择工具 → 输入消息 → 同时发送</p></div>`;
+  document.getElementById('welcome-screen').classList.remove('hidden');
+  document.getElementById('tool-panels').classList.add('hidden');
+  // 清空所有面板内容
+  document.querySelectorAll('.tool-panel-content').forEach(el => el.innerHTML = '');
 }
 
 // === 产物浏览 ===
@@ -458,29 +486,50 @@ async function deleteSession(id) {
 }
 
 function renderSessionHistory(session) {
-  const panel = document.getElementById('output-panel');
   if (!session.messages.length) {
-    panel.innerHTML = `<div id="welcome-screen"><h2>${esc(session.name)}</h2><p class="hint">开始对话...</p></div>`;
+    clearOutput();
     return;
   }
-  let html = '';
+
+  showToolPanels();
+
+  // 获取所有工具 ID
+  const toolIds = new Set();
   session.messages.forEach(msg => {
-    html += `<div class="history-message"><div class="msg-user"><strong>你:</strong> ${esc(msg.content)}</div>`;
-    if (msg.toolOutputs) {
-      for (const [toolId, output] of Object.entries(msg.toolOutputs)) {
-        const content = output.error || output.content || '(无输出)';
-        const isError = output.error ? ' style="color:var(--danger)"' : '';
-        html += `<div class="msg-tool"><strong>${toolId}:</strong> <pre${isError}>${esc(content)}</pre></div>`;
-      }
-    }
-    if (msg.artifacts) {
-      const total = Object.values(msg.artifacts).reduce((s, a) => s + (a?.length || 0), 0);
-      if (total > 0) html += `<div class="msg-artifacts">📦 ${total} 个文件变更</div>`;
-    }
-    html += '</div>';
+    if (msg.toolOutputs) Object.keys(msg.toolOutputs).forEach(id => toolIds.add(id));
   });
-  panel.innerHTML = html;
-  scrollToBottom();
+
+  // 为每个工具面板渲染历史
+  toolIds.forEach(toolId => {
+    const panel = document.getElementById(`panel-content-${toolId}`);
+    if (!panel) return;
+    panel.innerHTML = '';
+
+    session.messages.forEach(msg => {
+      // 用户消息
+      const userDiv = document.createElement('div');
+      userDiv.className = 'panel-user-msg';
+      userDiv.textContent = `> ${msg.content}`;
+      panel.appendChild(userDiv);
+
+      // 工具回复
+      if (msg.toolOutputs && msg.toolOutputs[toolId]) {
+        const output = msg.toolOutputs[toolId];
+        const replyDiv = document.createElement('div');
+        replyDiv.className = 'panel-reply';
+        replyDiv.dataset.done = 'true';
+        if (output.error) {
+          replyDiv.classList.add('panel-reply-error');
+          replyDiv.textContent = output.error;
+        } else {
+          replyDiv.textContent = output.content || '(无输出)';
+        }
+        panel.appendChild(replyDiv);
+      }
+    });
+  });
+
+  scrollAllPanels();
 }
 
 // === 工具函数 ===
