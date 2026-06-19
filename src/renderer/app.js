@@ -84,12 +84,7 @@ function setupEventListeners() {
   document.getElementById('template-btn').addEventListener('click', toggleTemplateDropdown);
   document.getElementById('browse-dir-btn').addEventListener('click', browseDirectory);
 
-  // 关闭弹窗
-  document.querySelectorAll('.close-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById(btn.dataset.close).classList.add('hidden');
-    });
-  });
+  modalManager.init();
 
   // 导出选项
   document.querySelectorAll('.export-option').forEach(btn => {
@@ -101,13 +96,6 @@ function setupEventListeners() {
 
   // 添加模板
   document.getElementById('add-tpl-btn').addEventListener('click', addTemplate);
-
-  // 弹窗背景关闭
-  document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.add('hidden');
-    });
-  });
 
   window.codehub.onStreamChunk(({ toolId, chunk }) => appendToOutput(toolId, chunk));
   window.codehub.onSessionUpdated(() => refreshSessionList());
@@ -199,8 +187,7 @@ function showArtifactsModal() {
   for (const [toolId, files] of Object.entries(lastArtifacts)) {
     if (files?.length) files.forEach(f => allFiles.push({ ...f, toolId }));
   }
-  if (!allFiles.length) { alert('暂无产物'); return; }
-  const modal = document.getElementById('artifacts-modal');
+  if (!allFiles.length) { toast.info('暂无产物'); return; }
   const fileList = document.getElementById('artifacts-file-list');
   const fileContent = document.getElementById('artifacts-file-content');
   fileList.innerHTML = '';
@@ -216,7 +203,7 @@ function showArtifactsModal() {
     });
     fileList.appendChild(item);
   });
-  modal.classList.remove('hidden');
+  modalManager.open('artifacts-modal');
 }
 
 async function loadFileContent(file) {
@@ -237,27 +224,23 @@ async function loadFileContent(file) {
 // === 结果对比 ===
 
 function showCompareModal() {
-  if (!Object.keys(lastResults).length) { alert('暂无结果'); return; }
-  let html = '<div class="compare-grid">';
-  for (const [toolId, result] of Object.entries(lastResults)) {
-    html += `<div class="compare-column"><h4>${toolId}</h4><pre>${esc(result.content || result.error || '(无输出)')}</pre></div>`;
-  }
-  html += '</div>';
-  document.getElementById('compare-content').innerHTML = html;
-  document.getElementById('compare-modal').classList.remove('hidden');
+  if (!Object.keys(lastResults).length) { toast.info('暂无结果'); return; }
+  const viewer = new DiffViewer('compare-content');
+  viewer.render(lastResults);
+  modalManager.open('compare-modal');
 }
 
 // === 导出 ===
 
 function showExportModal() {
-  if (!currentSessionId) { alert('请先选择会话'); return; }
-  document.getElementById('export-modal').classList.remove('hidden');
+  if (!currentSessionId) { toast.info('请先选择会话'); return; }
+  modalManager.open('export-modal');
 }
 
 async function exportSession(format) {
   const path = await window.codehub.exportSession({ sessionId: currentSessionId, format });
-  document.getElementById('export-modal').classList.add('hidden');
-  if (path) alert(`已导出: ${path}`);
+  modalManager.closeById('export-modal');
+  if (path) toast.success(`已导出: ${path}`);
 }
 
 // === 模板 ===
@@ -312,7 +295,7 @@ async function showTemplatesModal() {
 async function addTemplate() {
   const name = document.getElementById('tpl-name-input').value.trim();
   const content = document.getElementById('tpl-content-input').value.trim();
-  if (!name || !content) { alert('请填写名称和内容'); return; }
+  if (!name || !content) { toast.info('请填写名称和内容'); return; }
   await window.codehub.saveTemplate({ name, content });
   document.getElementById('tpl-name-input').value = '';
   document.getElementById('tpl-content-input').value = '';
@@ -348,7 +331,7 @@ async function addCustomTool() {
   const name = document.getElementById('tool-name-input').value.trim();
   const command = document.getElementById('tool-command-input').value.trim();
   const argsStr = document.getElementById('tool-args-input').value.trim();
-  if (!name || !command) { alert('请填写名称和命令'); return; }
+  if (!name || !command) { toast.info('请填写名称和命令'); return; }
   const args = argsStr ? argsStr.split(/\s+/) : [];
   await window.codehub.addCustomTool({ name, command, args });
   document.getElementById('tool-name-input').value = '';

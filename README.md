@@ -49,6 +49,21 @@ npm start
 npm run dev
 ```
 
+## 构建
+
+```bash
+# macOS
+npm run build
+
+# Windows
+npm run build:win
+
+# Linux
+npm run build:linux
+```
+
+构建产物输出到 `dist/` 目录。
+
 ## 前置要求
 
 需要安装至少一个 AI 编码工具：
