@@ -92,12 +92,14 @@ function createClaudeCodeAdapter() {
 }
 
 function createMimoCodeAdapter() {
-  return new ToolAdapter({
+  const adapter = new ToolAdapter({
     id: 'mimo-code',
     name: 'MiMo Code',
-    transport: new CLITransport('mimo', ['run', '--format', 'json']),
+    transport: new CLITransport('mimo', ['run', '--format', 'json'], { messageAsArg: true }),
     streamParser: new MimoParser(),
   });
+
+  return adapter;
 }
 
 function createCustomAdapter(config) {

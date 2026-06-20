@@ -10,11 +10,19 @@ class CLITransport {
     this.args = args;
     this.options = options;
     this.process = null;
+    this.messageAsArg = options.messageAsArg || false;
   }
 
   async send(message, { workDir, onStdout, onStderr } = {}) {
     return new Promise((resolve, reject) => {
-      this.process = spawn(this.command, this.args, {
+      let args = [...this.args];
+      
+      // 如果配置了 messageAsArg，将消息作为参数传递
+      if (this.messageAsArg && message) {
+        args.push(message);
+      }
+
+      this.process = spawn(this.command, args, {
         cwd: workDir || require('os').homedir(),
         env: { ...process.env, ...this.options.env },
       });
@@ -44,8 +52,8 @@ class CLITransport {
         reject(err);
       });
 
-      // 通过stdin传递消息
-      if (message) {
+      // 如果没有配置 messageAsArg，通过 stdin 传递消息
+      if (!this.messageAsArg && message) {
         this.process.stdin.write(message);
         this.process.stdin.end();
       }

@@ -47,7 +47,7 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
   const artifacts = {};
 
   const targetDir = workDir || __dirname;
-  const TIMEOUT_MS = 5 * 60 * 1000;
+  const TIMEOUT_MS = 2 * 60 * 1000; // 2 分钟超时
 
   const promises = toolIds.map(async (toolId) => {
     const adapter = registry.get(toolId);
