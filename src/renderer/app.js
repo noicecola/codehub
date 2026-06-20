@@ -46,6 +46,14 @@ function renderToolSelector(tools) {
     label.append(cb, toolLabel);
     container.appendChild(label);
   });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tool-add-btn';
+  addBtn.textContent = '+';
+  addBtn.title = '添加工具';
+  addBtn.addEventListener('click', showToolsModal);
+  container.appendChild(addBtn);
+
   updateSelectedInfo();
 }
 

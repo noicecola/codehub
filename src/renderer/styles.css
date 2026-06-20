@@ -394,6 +394,28 @@ body {
 .tool-checkbox input { display: none; }
 .tool-checkbox.unavailable { opacity: 0.4; cursor: not-allowed; }
 
+.tool-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tool-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
+
 .tool-label {
   display: flex;
   align-items: center;
