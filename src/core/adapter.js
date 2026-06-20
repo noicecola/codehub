@@ -95,7 +95,7 @@ function createMimoCodeAdapter() {
   const adapter = new ToolAdapter({
     id: 'mimo-code',
     name: 'MiMo Code',
-    transport: new CLITransport('mimo', ['run', '--format', 'json'], { messageAsArg: true }),
+    transport: new CLITransport('mimo', ['run', '--format', 'json', '--pure'], { messageAsArg: true }),
     streamParser: new MimoParser(),
   });
 
