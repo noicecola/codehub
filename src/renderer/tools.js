@@ -12,19 +12,20 @@ function renderToolSelector(tools) {
     cb.addEventListener('change', (e) => {
       e.target.checked ? state.selectedTools.add(tool.id) : state.selectedTools.delete(tool.id);
       label.classList.toggle('selected', e.target.checked);
+      dot.className = `tool-status ${e.target.checked ? 'selected' : ''}`;
+      togglePanel(tool.id, e.target.checked);
       updateSendButton();
       updateSelectedInfo();
     });
     if (tool.available) label.classList.add('selected');
-    const statusLabel = document.createElement('span');
-    statusLabel.className = 'tool-status idle';
-    statusLabel.id = `status-${tool.id}`;
-    statusLabel.textContent = '就绪';
+    const dot = document.createElement('span');
+    dot.className = `tool-status ${tool.available ? 'selected' : ''}`;
+    dot.id = `status-${tool.id}`;
     const txt = document.createElement('span');
     txt.textContent = tool.available ? tool.name : `${tool.name} (未安装)`;
     const toolLabel = document.createElement('span');
     toolLabel.className = 'tool-label';
-    toolLabel.append(statusLabel, txt);
+    toolLabel.append(dot, txt);
     label.append(cb, toolLabel);
     container.appendChild(label);
   });

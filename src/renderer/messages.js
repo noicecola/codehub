@@ -59,6 +59,10 @@ function stopAll() {
 function showToolPanels() {
   document.getElementById('welcome-screen').classList.add('hidden');
   document.getElementById('tool-panels').classList.remove('hidden');
+  document.querySelectorAll('.tool-panel').forEach(panel => {
+    const toolId = panel.id.replace('panel-', '');
+    panel.style.display = state.selectedTools.has(toolId) ? '' : 'none';
+  });
 }
 
 function appendUserMessage(content) {
@@ -111,6 +115,21 @@ function updatePanelStatus(toolId, status) {
     el.textContent = labels[status] || status;
     el.className = `tool-panel-status status-${status}`;
   }
+  updateToolStatus(toolId, status);
+}
+
+function updateToolStatus(toolId, status) {
+  const dot = document.getElementById(`status-${toolId}`);
+  if (!dot) return;
+  dot.className = `tool-status ${status}`;
+  if (status === 'completed') {
+    setTimeout(() => { dot.className = 'tool-status selected'; }, 2000);
+  }
+}
+
+function togglePanel(toolId, visible) {
+  const panel = document.getElementById(`panel-${toolId}`);
+  if (panel) panel.style.display = visible ? '' : 'none';
 }
 
 function scrollPanel(toolId) {
