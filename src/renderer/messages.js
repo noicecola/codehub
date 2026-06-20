@@ -61,18 +61,24 @@ function showToolPanels() {
   const container = document.getElementById('tool-panels');
   container.classList.remove('hidden');
 
-  const visibleCount = Array.from(document.querySelectorAll('.tool-panel'))
-    .filter(p => state.selectedTools.has(p.id.replace('panel-', '')))
-    .length;
+  const allPanels = document.querySelectorAll('.tool-panel');
+  const visiblePanels = Array.from(allPanels)
+    .filter(p => state.selectedTools.has(p.id.replace('panel-', '')));
 
-  const cols = visibleCount <= 2 ? visibleCount : (visibleCount === 3 ? 3 : 2);
+  const cols = visiblePanels.length <= 2 ? visiblePanels.length : (visiblePanels.length === 3 ? 3 : 2);
   container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
   container.classList.toggle('cols-3', cols === 3);
 
-  document.querySelectorAll('.tool-panel').forEach(panel => {
+  allPanels.forEach(panel => {
     const toolId = panel.id.replace('panel-', '');
-    panel.style.display = state.selectedTools.has(toolId) ? '' : 'none';
+    const selected = state.selectedTools.has(toolId);
+    panel.style.display = selected ? '' : 'none';
+    panel.classList.remove('span-full');
   });
+
+  if (cols === 2 && visiblePanels.length % 2 === 1) {
+    visiblePanels[visiblePanels.length - 1].classList.add('span-full');
+  }
 }
 
 function appendUserMessage(content) {

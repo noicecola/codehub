@@ -271,11 +271,11 @@ body {
   min-width: 0;
 }
 
-.tool-panel:last-child:nth-child(odd) {
+.tool-panel.span-full {
   grid-column: 1 / -1;
 }
 
-.cols-3 .tool-panel:last-child:nth-child(odd) {
+.cols-3 .tool-panel.span-full {
   grid-column: auto;
 }
 
