@@ -103,7 +103,7 @@ function createMimoCodeAdapter() {
 }
 
 function createCustomAdapter(config) {
-  const args = config.args ? config.args.split(/\s+/) : [];
+  const args = Array.isArray(config.args) ? config.args : [];
   return new ToolAdapter({
     id: config.id || `custom-${Date.now()}`,
     name: config.name,
