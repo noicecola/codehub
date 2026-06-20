@@ -4,6 +4,7 @@ async function sendMessage() {
   if (!content || state.selectedTools.size === 0) return;
   if (!state.currentSessionId) return;
 
+  input.value = '';
   state.isRunning = true;
   updateSendButton();
   document.getElementById('send-btn').style.display = 'none';
@@ -38,7 +39,6 @@ async function sendMessage() {
   updateSendButton();
   document.getElementById('send-btn').style.display = 'inline-block';
   document.getElementById('stop-btn').style.display = 'none';
-  input.value = '';
 
   await refreshSessionList();
 }
@@ -58,7 +58,17 @@ function stopAll() {
 
 function showToolPanels() {
   document.getElementById('welcome-screen').classList.add('hidden');
-  document.getElementById('tool-panels').classList.remove('hidden');
+  const container = document.getElementById('tool-panels');
+  container.classList.remove('hidden');
+
+  const visibleCount = Array.from(document.querySelectorAll('.tool-panel'))
+    .filter(p => state.selectedTools.has(p.id.replace('panel-', '')))
+    .length;
+
+  const cols = visibleCount <= 2 ? visibleCount : (visibleCount === 3 ? 3 : 2);
+  container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  container.classList.toggle('cols-3', cols === 3);
+
   document.querySelectorAll('.tool-panel').forEach(panel => {
     const toolId = panel.id.replace('panel-', '');
     panel.style.display = state.selectedTools.has(toolId) ? '' : 'none';
