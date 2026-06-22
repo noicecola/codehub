@@ -185,6 +185,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 /* === 工具栏（精简版） === */
@@ -233,6 +234,7 @@ body {
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 #welcome-screen {
@@ -252,23 +254,61 @@ body {
 #welcome-screen .tips { margin-top: 16px; font-size: 11px; color: var(--text-secondary); display: flex; gap: 8px; }
 
 /* 面板布局 */
-.tool-panels {
-  display: grid;
-  grid-auto-rows: auto;
-  grid-auto-flow: dense;
-  gap: 1px;
-  background: var(--border);
-  overflow-y: auto;
-  max-height: calc(2 * 300px + 1px);
+.panels-wrapper {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.tool-panels.hidden { display: none; }
+.panels-wrapper.hidden { display: none; }
+
+.tool-panels {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.scrollbar-track {
+  width: 40px;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: none;
+}
+
+.scrollbar-track.active { display: block; }
+
+.scrollbar-thumb {
+  position: absolute;
+  width: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-secondary);
+  border-radius: 10px;
+  min-height: 30px;
+  cursor: grab;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.scrollbar-thumb:hover { opacity: 0.7; }
+.scrollbar-thumb:active { cursor: grabbing; opacity: 0.9; }
 
 .tool-panel {
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tool-panel.span-full {
@@ -316,6 +356,8 @@ body {
   font-size: 12.5px;
   line-height: 1.65;
   color: var(--text-primary);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .panel-user-msg {

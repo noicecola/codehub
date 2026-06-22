@@ -56,29 +56,141 @@ function stopAll() {
 
 // === 输出面板 ===
 
+let scrollbarInited = false;
+
+function initScrollbar() {
+  if (scrollbarInited) return;
+  scrollbarInited = true;
+
+  const track = document.getElementById('scrollbar-track');
+  const thumb = document.getElementById('scrollbar-thumb');
+  const content = document.getElementById('tool-panels');
+  let isDragging = false;
+  let startY, startScrollTop;
+
+  function updateThumb() {
+    const ratio = content.clientHeight / content.scrollHeight;
+    if (ratio >= 1) { thumb.style.display = 'none'; return; }
+    thumb.style.display = '';
+    const trackH = track.clientHeight;
+    const thumbH = Math.max(30, trackH * ratio);
+    const maxScroll = content.scrollHeight - content.clientHeight;
+    const thumbTop = (content.scrollTop / maxScroll) * (trackH - thumbH);
+    thumb.style.height = thumbH + 'px';
+    thumb.style.top = thumbTop + 'px';
+  }
+
+  track.addEventListener('mousedown', (e) => {
+    if (e.target === thumb) {
+      isDragging = true;
+      startY = e.clientY;
+      startScrollTop = content.scrollTop;
+      e.preventDefault();
+    } else {
+      const trackRect = track.getBoundingClientRect();
+      const clickRatio = (e.clientY - trackRect.top) / trackRect.height;
+      content.scrollTop = clickRatio * (content.scrollHeight - content.clientHeight);
+    }
+  });
+
+  track.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    content.scrollTop += e.deltaY;
+  }, { passive: false });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const trackH = track.clientHeight;
+    const ratio = content.clientHeight / content.scrollHeight;
+    const thumbH = Math.max(30, trackH * ratio);
+    const trackScrollable = trackH - thumbH;
+    const contentScrollable = content.scrollHeight - content.clientHeight;
+    const dy = e.clientY - startY;
+    const scrollDelta = (dy / trackScrollable) * contentScrollable;
+    content.scrollTop = startScrollTop + scrollDelta;
+  });
+
+  document.addEventListener('mouseup', () => { isDragging = false; });
+
+  content.addEventListener('scroll', updateThumb);
+
+  new MutationObserver(updateThumb).observe(content, { childList: true, subtree: true });
+}
+
 function showToolPanels() {
   document.getElementById('welcome-screen').classList.add('hidden');
+  const wrapper = document.getElementById('panels-wrapper');
+  wrapper.classList.remove('hidden');
   const container = document.getElementById('tool-panels');
-  container.classList.remove('hidden');
+  const track = document.getElementById('scrollbar-track');
 
   const allPanels = document.querySelectorAll('.tool-panel');
   const visiblePanels = Array.from(allPanels)
     .filter(p => state.selectedTools.has(p.id.replace('panel-', '')));
 
-  const cols = visiblePanels.length <= 2 ? visiblePanels.length : (visiblePanels.length === 3 ? 3 : 2);
-  container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  container.classList.toggle('cols-3', cols === 3);
+  const masonry = visiblePanels.length > 4;
+
+  if (masonry) {
+    const cols = 2;
+    const rows = Math.ceil(visiblePanels.length / cols);
+    const rowHeight = 330;
+    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    container.style.gridTemplateRows = `repeat(${rows}, ${rowHeight}px)`;
+    container.style.gridAutoRows = '';
+    container.style.alignContent = '';
+    container.style.overflowY = 'hidden';
+    track.classList.add('active');
+    initScrollbar();
+  } else {
+    const cols = visiblePanels.length <= 2 ? visiblePanels.length : (visiblePanels.length === 3 ? 3 : 2);
+    const rows = Math.ceil(visiblePanels.length / cols);
+    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    container.style.gridAutoRows = '';
+    container.style.alignContent = '';
+    container.style.overflowY = '';
+    track.classList.remove('active');
+    container.scrollTop = 0;
+  }
+
+  container.classList.toggle('cols-3', !masonry && visiblePanels.length === 3);
 
   allPanels.forEach(panel => {
     const toolId = panel.id.replace('panel-', '');
     const selected = state.selectedTools.has(toolId);
     panel.style.display = selected ? '' : 'none';
     panel.classList.remove('span-full');
+    const content = panel.querySelector('.tool-panel-content');
+    if (content) {
+      content.style.flex = '1';
+      content.style.overflowY = 'auto';
+      content.style.maxHeight = '';
+    }
   });
 
-  if (cols === 2 && visiblePanels.length % 2 === 1) {
+  if (!masonry && cols === 2 && visiblePanels.length % 2 === 1) {
     visiblePanels[visiblePanels.length - 1].classList.add('span-full');
   }
+
+  requestAnimationFrame(() => {
+    if (masonry) {
+      const track = document.getElementById('scrollbar-track');
+      const thumb = document.getElementById('scrollbar-thumb');
+      const content = document.getElementById('tool-panels');
+      const ratio = content.clientHeight / content.scrollHeight;
+      if (ratio >= 1) {
+        track.classList.remove('active');
+      } else {
+        track.classList.add('active');
+        const trackH = track.clientHeight;
+        const thumbH = Math.max(30, trackH * ratio);
+        const maxScroll = content.scrollHeight - content.clientHeight;
+        thumb.style.height = thumbH + 'px';
+        thumb.style.top = '0px';
+        thumb.style.display = '';
+      }
+    }
+  });
 }
 
 function appendUserMessage(content) {
@@ -146,6 +258,7 @@ function updateToolStatus(toolId, status) {
 function togglePanel(toolId, visible) {
   const panel = document.getElementById(`panel-${toolId}`);
   if (panel) panel.style.display = visible ? '' : 'none';
+  showToolPanels();
 }
 
 function scrollPanel(toolId) {
@@ -159,7 +272,7 @@ function scrollAllPanels() {
 
 function clearOutput() {
   document.getElementById('welcome-screen').classList.remove('hidden');
-  document.getElementById('tool-panels').classList.add('hidden');
+  document.getElementById('panels-wrapper').classList.add('hidden');
   document.querySelectorAll('.tool-panel-content').forEach(el => el.innerHTML = '');
 }
 

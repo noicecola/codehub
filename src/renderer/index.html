@@ -47,20 +47,10 @@
             <span>左侧管理会话</span>
           </div>
         </div>
-        <div id="tool-panels" class="tool-panels hidden">
-          <div class="tool-panel" id="panel-claude-code">
-            <div class="tool-panel-header">
-              <span class="tool-panel-name">Claude Code</span>
-              <span class="tool-panel-status" id="panel-status-claude-code">就绪</span>
-            </div>
-            <div class="tool-panel-content" id="panel-content-claude-code"></div>
-          </div>
-          <div class="tool-panel" id="panel-mimo-code">
-            <div class="tool-panel-header">
-              <span class="tool-panel-name">MiMo Code</span>
-              <span class="tool-panel-status" id="panel-status-mimo-code">就绪</span>
-            </div>
-            <div class="tool-panel-content" id="panel-content-mimo-code"></div>
+        <div id="panels-wrapper" class="panels-wrapper hidden">
+          <div id="tool-panels" class="tool-panels"></div>
+          <div id="scrollbar-track" class="scrollbar-track">
+            <div id="scrollbar-thumb" class="scrollbar-thumb"></div>
           </div>
         </div>
       </main>
