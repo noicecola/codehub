@@ -55,6 +55,21 @@ function setupEventListeners() {
   document.getElementById('add-tpl-btn').addEventListener('click', addTemplate);
   document.getElementById('save-preset-btn').addEventListener('click', saveCurrentAsPreset);
 
+  const inputArea = document.getElementById('input-area');
+  inputArea.addEventListener('dragover', (e) => { e.preventDefault(); inputArea.classList.add('drag-over'); });
+  inputArea.addEventListener('dragleave', () => inputArea.classList.remove('drag-over'));
+  inputArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    inputArea.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) {
+      const input = document.getElementById('message-input');
+      const paths = files.map(f => f.path).join('\n');
+      input.value += (input.value ? '\n' : '') + paths;
+      input.focus();
+    }
+  });
+
   window.codehub.onStreamChunk(({ toolId, chunk }) => appendToOutput(toolId, chunk));
   window.codehub.onSessionUpdated(() => refreshSessionList());
 
