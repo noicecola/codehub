@@ -283,15 +283,31 @@ function finalizeOutput(toolId, content, isError) {
   if (!reply) {
     reply = document.createElement('div');
     reply.className = 'panel-reply';
-    if (isError) reply.classList.add('panel-reply-error');
-    reply.innerHTML = isError ? esc(content || '(无输出)') : renderMarkdown(content || '(无输出)');
+    if (isError) {
+      reply.classList.add('panel-reply-error');
+      reply.innerHTML = formatError(content || '(无输出)');
+    } else {
+      reply.innerHTML = renderMarkdown(content || '(无输出)');
+    }
     panel.appendChild(reply);
   } else {
     reply.dataset.done = 'true';
-    if (isError) reply.classList.add('panel-reply-error');
-    if (!isError && content) reply.innerHTML = renderMarkdown(content);
+    if (isError) {
+      reply.classList.add('panel-reply-error');
+      reply.innerHTML = formatError(content || reply.textContent || '(无输出)');
+    } else if (content) {
+      reply.innerHTML = renderMarkdown(content);
+    }
   }
   scrollPanel(toolId);
+}
+
+function formatError(text) {
+  const lines = text.split('\n');
+  if (lines.length <= 3) return esc(text);
+  const preview = lines.slice(0, 3).join('\n');
+  const rest = lines.slice(3).join('\n');
+  return `${esc(preview)}<details class="error-details"><summary>展开完整错误 (${lines.length} 行)</summary><pre>${esc(rest)}</pre></details>`;
 }
 
 function showToolStats(toolId, result) {
