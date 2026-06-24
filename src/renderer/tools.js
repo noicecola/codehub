@@ -171,14 +171,33 @@ function editTool(tool) {
     </div>`;
   document.getElementById('save-edit-tool-btn').addEventListener('click', saveEditTool);
   document.getElementById('cancel-edit-tool-btn').addEventListener('click', () => {
-    form.innerHTML = `
-      <h4>添加自定义工具</h4>
-      <input id="tool-name-input" placeholder="名称" />
+    resetAddToolForm();
+  });
+}
+
+function resetAddToolForm() {
+  const form = document.querySelector('.add-tool-form');
+  form.innerHTML = `
+    <h4>添加自定义工具</h4>
+    <select id="tool-type-select">
+      <option value="cli">CLI 命令</option>
+      <option value="http">HTTP API</option>
+    </select>
+    <input id="tool-name-input" placeholder="名称" />
+    <div id="cli-fields">
       <input id="tool-command-input" placeholder="命令 (如 python3)" />
       <input id="tool-args-input" placeholder="参数 (可选)" />
-      <button id="add-tool-btn" class="primary-btn">添加</button>`;
-    document.getElementById('add-tool-btn').addEventListener('click', addCustomTool);
+    </div>
+    <div id="http-fields" style="display:none">
+      <input id="tool-url-input" placeholder="URL (如 http://localhost:8080)" />
+      <input id="tool-path-input" placeholder="路径 (默认 /chat)" />
+    </div>
+    <button id="add-tool-btn" class="primary-btn">添加</button>`;
+  document.getElementById('tool-type-select').addEventListener('change', (e) => {
+    document.getElementById('cli-fields').style.display = e.target.value === 'cli' ? '' : 'none';
+    document.getElementById('http-fields').style.display = e.target.value === 'http' ? '' : 'none';
   });
+  document.getElementById('add-tool-btn').addEventListener('click', addCustomTool);
 }
 
 async function saveEditTool() {
@@ -195,15 +214,23 @@ async function saveEditTool() {
 }
 
 async function addCustomTool() {
+  const type = document.getElementById('tool-type-select').value;
   const name = document.getElementById('tool-name-input').value.trim();
-  const command = document.getElementById('tool-command-input').value.trim();
-  const argsStr = document.getElementById('tool-args-input').value.trim();
-  if (!name || !command) { toast.info('请填写名称和命令'); return; }
-  const args = argsStr ? argsStr.split(/\s+/) : [];
-  await window.codehub.addCustomTool({ name, command, args });
-  document.getElementById('tool-name-input').value = '';
-  document.getElementById('tool-command-input').value = '';
-  document.getElementById('tool-args-input').value = '';
+  if (!name) { toast.info('请填写名称'); return; }
+
+  if (type === 'http') {
+    const url = document.getElementById('tool-url-input').value.trim();
+    const path = document.getElementById('tool-path-input').value.trim() || '/chat';
+    if (!url) { toast.info('请填写 URL'); return; }
+    await window.codehub.addCustomTool({ name, type: 'http', url, path });
+  } else {
+    const command = document.getElementById('tool-command-input').value.trim();
+    const argsStr = document.getElementById('tool-args-input').value.trim();
+    if (!command) { toast.info('请填写命令'); return; }
+    const args = argsStr ? argsStr.split(/\s+/) : [];
+    await window.codehub.addCustomTool({ name, command, args });
+  }
+  resetAddToolForm();
   modalManager.closeById('tools-modal');
   await refreshToolSelector();
   toast.success(`已添加: ${name}`);

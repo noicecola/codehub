@@ -104,6 +104,17 @@ function createMimoCodeAdapter() {
 
 function createCustomAdapter(config) {
   const args = Array.isArray(config.args) ? config.args : [];
+  const type = config.type || 'cli';
+
+  if (type === 'http') {
+    return new ToolAdapter({
+      id: config.id || `custom-${Date.now()}`,
+      name: config.name,
+      transport: new HTTPTransport(config.url, { path: config.path || '/chat', body: config.body || {} }),
+      streamParser: new PlainTextParser(),
+    });
+  }
+
   return new ToolAdapter({
     id: config.id || `custom-${Date.now()}`,
     name: config.name,

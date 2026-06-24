@@ -66,7 +66,10 @@ class AdapterRegistry {
       .map(a => ({
         id: a.id,
         name: a.name,
-        command: a.transport.command,
+        type: a.transport instanceof require('./transport').HTTPTransport ? 'http' : 'cli',
+        command: a.transport.command || '',
+        url: a.transport.baseUrl || '',
+        path: a.transport.options?.path || '',
         args: a.args.join(' '),
       }));
     fs.writeFileSync(this.customToolsFile, JSON.stringify(tools, null, 2), 'utf8');
