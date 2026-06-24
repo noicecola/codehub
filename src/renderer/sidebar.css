@@ -127,6 +127,22 @@
   margin-top: 2px;
 }
 
+.session-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.session-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+  cursor: pointer;
+}
+.session-tag:hover { background: rgba(59, 130, 246, 0.2); }
+
 .session-delete {
   opacity: 0;
   border: none;

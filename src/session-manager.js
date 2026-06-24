@@ -36,6 +36,7 @@ class SessionManager {
         id: data.id,
         name: data.name,
         messageCount: data.messages.length,
+        tags: data.tags || [],
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       };
@@ -54,6 +55,7 @@ class SessionManager {
       id,
       name: name || `会话 ${new Date().toLocaleString('zh-CN')}`,
       messages: [],
+      tags: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };

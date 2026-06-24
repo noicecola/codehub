@@ -254,6 +254,13 @@ ipcMain.handle('delete-session', (event, id) => {
 
 ipcMain.handle('get-current-session-id', () => currentSessionId);
 
+ipcMain.handle('update-session-tags', (event, { sessionId, tags }) => {
+  const session = sessionManager.loadSession(sessionId);
+  if (!session) return null;
+  session.tags = tags;
+  return sessionManager.saveSession(session);
+});
+
 // === 目录 ===
 
 ipcMain.handle('select-directory', async () => {

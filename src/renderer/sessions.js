@@ -17,18 +17,30 @@ async function refreshSessionList() {
   const list = document.getElementById('session-list');
   const query = (document.getElementById('session-search')?.value || '').toLowerCase();
   list.innerHTML = '';
+
+  const allTags = new Set();
+  sessions.forEach(s => (s.tags || []).forEach(t => allTags.add(t)));
+
   sessions
-    .filter(s => !query || s.name.toLowerCase().includes(query))
+    .filter(s => {
+      if (!query) return true;
+      if (s.name.toLowerCase().includes(query)) return true;
+      return (s.tags || []).some(t => t.toLowerCase().includes(query));
+    })
     .forEach(s => {
       const item = document.createElement('div');
       item.className = `session-item ${s.id === state.currentSessionId ? 'active' : ''}`;
+      const tagsHtml = (s.tags || []).map(t => `<span class="session-tag">${esc(t)}</span>`).join('');
       item.innerHTML = `
         <div class="session-info">
           <div class="session-name">${esc(s.name)}</div>
+          ${tagsHtml ? `<div class="session-tags">${tagsHtml}</div>` : ''}
           <div class="session-meta">${s.messageCount} 条 · ${formatTime(s.updatedAt)}</div>
         </div>
         <button class="session-delete" data-id="${s.id}">&times;</button>`;
-      item.addEventListener('click', (e) => { if (!e.target.classList.contains('session-delete')) loadSession(s.id); });
+      item.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('session-delete') && !e.target.classList.contains('session-tag')) loadSession(s.id);
+      });
       item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
       list.appendChild(item);
     });
@@ -114,4 +126,17 @@ function renderSessionHistory(session) {
   });
 
   scrollAllPanels();
+}
+
+async function editSessionTags() {
+  if (!state.currentSessionId) return;
+  const session = await window.codehub.loadSession(state.currentSessionId);
+  if (!session) return;
+  const currentTags = (session.tags || []).join(', ');
+  const input = prompt('标签 (逗号分隔):', currentTags);
+  if (input === null) return;
+  const tags = input.split(',').map(t => t.trim()).filter(Boolean);
+  await window.codehub.updateSessionTags({ sessionId: state.currentSessionId, tags });
+  await refreshSessionList();
+  toast.success(tags.length ? `标签已更新: ${tags.join(', ')}` : '标签已清除');
 }

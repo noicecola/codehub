@@ -38,6 +38,7 @@ function setupEventListeners() {
     if (mod && e.key === 'b') { e.preventDefault(); document.getElementById('sidebar').classList.toggle('collapsed'); }
   });
   document.getElementById('compare-btn').addEventListener('click', showCompareModal);
+  document.getElementById('edit-tags-btn').addEventListener('click', editSessionTags);
   document.getElementById('artifacts-btn').addEventListener('click', showArtifactsModal);
   document.getElementById('export-btn').addEventListener('click', showExportModal);
   document.getElementById('manage-tools-btn').addEventListener('click', showToolsModal);

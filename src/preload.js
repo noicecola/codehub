@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('codehub', {
   loadSession: (id) => ipcRenderer.invoke('load-session', id),
   deleteSession: (id) => ipcRenderer.invoke('delete-session', id),
   getCurrentSessionId: () => ipcRenderer.invoke('get-current-session-id'),
+  updateSessionTags: (data) => ipcRenderer.invoke('update-session-tags', data),
   onSessionUpdated: (cb) => ipcRenderer.on('session-updated', (e, id) => cb(id)),
 
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
