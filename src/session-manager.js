@@ -6,12 +6,26 @@ class SessionManager {
   constructor() {
     this.dataDir = path.join(app.getPath('userData'), 'sessions');
     this.ensureDataDir();
+    this.cleanupOldSessions();
   }
 
   ensureDataDir() {
     if (!fs.existsSync(this.dataDir)) {
       fs.mkdirSync(this.dataDir, { recursive: true });
     }
+  }
+
+  cleanupOldSessions(maxAgeDays = 30) {
+    const files = fs.readdirSync(this.dataDir).filter(f => f.endsWith('.json'));
+    const cutoff = Date.now() - maxAgeDays * 86400000;
+    files.forEach(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(this.dataDir, f), 'utf8'));
+        if (data.updatedAt < cutoff) {
+          fs.unlinkSync(path.join(this.dataDir, f));
+        }
+      } catch {}
+    });
   }
 
   listSessions() {
