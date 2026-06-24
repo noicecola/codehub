@@ -1,3 +1,26 @@
+// === Markdown 渲染 ===
+const _markedConfigured = (() => {
+  if (typeof marked === 'undefined') return false;
+  const renderer = {
+    code({ text, lang }) {
+      let highlighted = text;
+      if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
+        highlighted = hljs.highlight(text, { language: lang }).value;
+      } else if (typeof hljs !== 'undefined') {
+        highlighted = hljs.highlightAuto(text).value;
+      }
+      return `<pre><code class="hljs language-${esc(lang || '')}">${highlighted}</code></pre>`;
+    },
+  };
+  marked.use({ renderer, breaks: true, gfm: true });
+  return true;
+})();
+
+function renderMarkdown(text) {
+  if (!_markedConfigured) return esc(text);
+  try { return marked.parse(text); } catch { return esc(text); }
+}
+
 async function retryTool(toolId) {
   const content = state.lastMessageContent;
   if (!content) return;
@@ -260,11 +283,12 @@ function finalizeOutput(toolId, content, isError) {
     reply = document.createElement('div');
     reply.className = 'panel-reply';
     if (isError) reply.classList.add('panel-reply-error');
-    reply.textContent = content || '(无输出)';
+    reply.innerHTML = isError ? esc(content || '(无输出)') : renderMarkdown(content || '(无输出)');
     panel.appendChild(reply);
   } else {
     reply.dataset.done = 'true';
     if (isError) reply.classList.add('panel-reply-error');
+    if (!isError && content) reply.innerHTML = renderMarkdown(content);
   }
   scrollPanel(toolId);
 }

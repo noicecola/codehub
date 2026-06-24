@@ -91,18 +91,18 @@ function renderSessionHistory(session) {
       panel.appendChild(userDiv);
 
       if (msg.toolOutputs && msg.toolOutputs[toolId]) {
-        const output = msg.toolOutputs[toolId];
-        const replyDiv = document.createElement('div');
-        replyDiv.className = 'panel-reply';
-        replyDiv.dataset.done = 'true';
-        if (output.error) {
-          replyDiv.classList.add('panel-reply-error');
-          replyDiv.textContent = output.error;
-        } else {
-          replyDiv.textContent = output.content || '(无输出)';
+          const output = msg.toolOutputs[toolId];
+          const replyDiv = document.createElement('div');
+          replyDiv.className = 'panel-reply';
+          replyDiv.dataset.done = 'true';
+          if (output.error) {
+            replyDiv.classList.add('panel-reply-error');
+            replyDiv.textContent = output.error;
+          } else {
+            replyDiv.innerHTML = renderMarkdown(output.content || '(无输出)');
+          }
+          panel.appendChild(replyDiv);
         }
-        panel.appendChild(replyDiv);
-      }
     });
   });
 
