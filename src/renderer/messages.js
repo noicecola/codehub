@@ -75,6 +75,7 @@ async function sendMessage() {
     for (const [toolId, result] of Object.entries(results)) {
       finalizeOutput(toolId, result.content || result.error, !!result.error);
       updatePanelStatus(toolId, result.error ? 'error' : 'completed');
+      if (result.elapsed) showToolStats(toolId, result);
     }
   } catch (err) {
     state.selectedTools.forEach(id => {
@@ -291,6 +292,21 @@ function finalizeOutput(toolId, content, isError) {
     if (!isError && content) reply.innerHTML = renderMarkdown(content);
   }
   scrollPanel(toolId);
+}
+
+function showToolStats(toolId, result) {
+  const panel = document.getElementById(`panel-content-${toolId}`);
+  if (!panel) return;
+  let stats = panel.querySelector('.panel-stats');
+  if (!stats) {
+    stats = document.createElement('div');
+    stats.className = 'panel-stats';
+    panel.appendChild(stats);
+  }
+  const elapsed = result.elapsed || 0;
+  const len = (result.content || '').length;
+  const sec = (elapsed / 1000).toFixed(1);
+  stats.textContent = `${sec}s · ${len} chars`;
 }
 
 function updatePanelStatus(toolId, status) {

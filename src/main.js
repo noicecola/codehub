@@ -56,8 +56,8 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
     const adapter = registry.get(toolId);
     if (!adapter) { results[toolId] = { error: `Unknown tool: ${toolId}` }; return; }
 
-    // 快照和工具启动并行执行
     const snapshotPromise = targetDir ? fileTracker.snapshot(toolId, targetDir) : Promise.resolve();
+    const startTime = Date.now();
 
     try {
       const result = await Promise.race([
@@ -69,14 +69,17 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)),
       ]);
 
-      log(`${toolId} done, code=${result.exitCode}, content=${(result.content || '').substring(0, 100)}`);
+      const elapsed = Date.now() - startTime;
+      log(`${toolId} done, code=${result.exitCode}, ${elapsed}ms, content=${(result.content || '').substring(0, 100)}`);
+      result.elapsed = elapsed;
       results[toolId] = result;
 
       await snapshotPromise;
       artifacts[toolId] = await fileTracker.diff(toolId, targetDir);
     } catch (err) {
-      log(`${toolId} error: ${err.message}`);
-      results[toolId] = { error: err.message };
+      const elapsed = Date.now() - startTime;
+      log(`${toolId} error: ${err.message} (${elapsed}ms)`);
+      results[toolId] = { error: err.message, elapsed };
     }
   });
 
