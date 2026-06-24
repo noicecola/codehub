@@ -30,6 +30,13 @@ function setupEventListeners() {
   document.getElementById('send-btn').addEventListener('click', sendMessage);
   document.getElementById('stop-btn').addEventListener('click', stopAll);
   document.getElementById('new-session-btn').addEventListener('click', createNewSession);
+
+  document.addEventListener('keydown', (e) => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key === 'n') { e.preventDefault(); createNewSession(); }
+    if (mod && e.key === 'k') { e.preventDefault(); document.getElementById('session-search').focus(); }
+    if (mod && e.key === 'b') { e.preventDefault(); document.getElementById('sidebar').classList.toggle('collapsed'); }
+  });
   document.getElementById('compare-btn').addEventListener('click', showCompareModal);
   document.getElementById('artifacts-btn').addEventListener('click', showArtifactsModal);
   document.getElementById('export-btn').addEventListener('click', showExportModal);
