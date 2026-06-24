@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('codehub', {
 
   addCustomTool: (tool) => ipcRenderer.invoke('add-custom-tool', tool),
   removeCustomTool: (id) => ipcRenderer.invoke('remove-custom-tool', id),
+  editCustomTool: (data) => ipcRenderer.invoke('edit-custom-tool', data),
 
   listTemplates: () => ipcRenderer.invoke('list-templates'),
   saveTemplate: (tpl) => ipcRenderer.invoke('save-template', tpl),

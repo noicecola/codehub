@@ -83,6 +83,15 @@ class AdapterRegistry {
     this.unregister(id);
     this.saveCustomTools();
   }
+
+  editCustom(id, updates) {
+    const adapter = this.adapters.get(id);
+    if (!adapter) return;
+    if (updates.name) adapter.name = updates.name;
+    if (updates.command) adapter.transport.command = updates.command;
+    if (updates.args) adapter.args = updates.args;
+    this.saveCustomTools();
+  }
 }
 
 module.exports = { AdapterRegistry };

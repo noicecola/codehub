@@ -27,6 +27,9 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    show: true,
+    center: true,
+    title: 'CodeHub',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -47,7 +50,7 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
   const artifacts = {};
 
   const targetDir = workDir || __dirname;
-  const TIMEOUT_MS = 2 * 60 * 1000; // 2 分钟超时
+  const TIMEOUT_MS = 5 * 60 * 1000; // 5 分钟超时
 
   const promises = toolIds.map(async (toolId) => {
     const adapter = registry.get(toolId);
@@ -136,6 +139,11 @@ ipcMain.handle('add-custom-tool', (event, tool) => {
 
 ipcMain.handle('remove-custom-tool', (event, toolId) => {
   registry.removeCustom(toolId);
+  return true;
+});
+
+ipcMain.handle('edit-custom-tool', (event, { id, name, command, args }) => {
+  registry.editCustom(id, { name, command, args });
   return true;
 });
 

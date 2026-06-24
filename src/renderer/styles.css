@@ -727,6 +727,30 @@ button {
 
 .list-item .delete-btn:hover { background: rgba(248, 81, 73, 0.1); }
 
+.list-item .item-actions { display: flex; gap: 4px; align-items: center; }
+
+.list-item .edit-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.list-item .edit-btn:hover { background: rgba(59, 130, 246, 0.1); }
+
+.edit-form-btns { display: flex; gap: 8px; margin-top: 10px; }
+.secondary-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.secondary-btn:hover { background: var(--bg-hover); }
+
 .add-tool-form, .add-template-form {
   border-top: 1px solid var(--border);
   padding-top: 10px;
