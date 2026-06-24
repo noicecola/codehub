@@ -15,20 +15,23 @@ async function loadOrCreateSession() {
 async function refreshSessionList() {
   const sessions = await window.codehub.listSessions();
   const list = document.getElementById('session-list');
+  const query = (document.getElementById('session-search')?.value || '').toLowerCase();
   list.innerHTML = '';
-  sessions.forEach(s => {
-    const item = document.createElement('div');
-    item.className = `session-item ${s.id === state.currentSessionId ? 'active' : ''}`;
-    item.innerHTML = `
-      <div class="session-info">
-        <div class="session-name">${esc(s.name)}</div>
-        <div class="session-meta">${s.messageCount} 条 · ${formatTime(s.updatedAt)}</div>
-      </div>
-      <button class="session-delete" data-id="${s.id}">&times;</button>`;
-    item.addEventListener('click', (e) => { if (!e.target.classList.contains('session-delete')) loadSession(s.id); });
-    item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
-    list.appendChild(item);
-  });
+  sessions
+    .filter(s => !query || s.name.toLowerCase().includes(query))
+    .forEach(s => {
+      const item = document.createElement('div');
+      item.className = `session-item ${s.id === state.currentSessionId ? 'active' : ''}`;
+      item.innerHTML = `
+        <div class="session-info">
+          <div class="session-name">${esc(s.name)}</div>
+          <div class="session-meta">${s.messageCount} 条 · ${formatTime(s.updatedAt)}</div>
+        </div>
+        <button class="session-delete" data-id="${s.id}">&times;</button>`;
+      item.addEventListener('click', (e) => { if (!e.target.classList.contains('session-delete')) loadSession(s.id); });
+      item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
+      list.appendChild(item);
+    });
 }
 
 async function createNewSession() {

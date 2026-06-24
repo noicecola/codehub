@@ -26,6 +26,7 @@ function setupEventListeners() {
   document.getElementById('message-input').addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); sendMessage(); }
   });
+  document.getElementById('session-search').addEventListener('input', () => refreshSessionList());
   document.getElementById('send-btn').addEventListener('click', sendMessage);
   document.getElementById('stop-btn').addEventListener('click', stopAll);
   document.getElementById('new-session-btn').addEventListener('click', createNewSession);

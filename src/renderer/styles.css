@@ -106,6 +106,21 @@ body {
 
 #new-session-btn:hover { background: var(--accent); border-color: var(--accent); }
 
+.sidebar-search {
+  padding: 6px 10px;
+}
+.sidebar-search input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+}
+.sidebar-search input:focus { border-color: var(--accent); }
+
 #session-list {
   flex: 1;
   overflow-y: auto;
