@@ -6,4 +6,5 @@ const state = {
   lastArtifacts: {},
   lastMessageContent: '',
   currentWorkDir: '',
+  drafts: {},
 };

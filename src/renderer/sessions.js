@@ -43,11 +43,18 @@ async function createNewSession() {
 }
 
 async function loadSession(id) {
+  const input = document.getElementById('message-input');
+  if (state.currentSessionId && input) {
+    state.drafts[state.currentSessionId] = input.value;
+  }
   const s = await window.codehub.loadSession(id);
   if (!s) return;
   state.currentSessionId = id;
   await refreshSessionList();
   renderSessionHistory(s);
+  if (input) {
+    input.value = state.drafts[id] || '';
+  }
 }
 
 async function deleteSession(id) {
