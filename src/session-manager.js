@@ -43,6 +43,47 @@ class SessionManager {
     }).sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
+  searchSessions(query) {
+    if (!query) return this.listSessions();
+    const q = query.toLowerCase();
+    const files = fs.readdirSync(this.dataDir).filter(f => f.endsWith('.json'));
+    return files.map(f => {
+      const data = JSON.parse(fs.readFileSync(path.join(this.dataDir, f), 'utf8'));
+      let matchSnippet = null;
+      for (const msg of data.messages) {
+        if (msg.content && msg.content.toLowerCase().includes(q)) {
+          matchSnippet = msg.content.substring(0, 80);
+          break;
+        }
+        if (msg.toolOutputs) {
+          for (const [toolId, output] of Object.entries(msg.toolOutputs)) {
+            if (output.content && output.content.toLowerCase().includes(q)) {
+              matchSnippet = `[${toolId}] ${output.content.substring(0, 60)}`;
+              break;
+            }
+          }
+          if (matchSnippet) break;
+        }
+      }
+      return {
+        id: data.id,
+        name: data.name,
+        messageCount: data.messages.length,
+        tags: data.tags || [],
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        matchSnippet,
+      };
+    })
+    .filter(s => {
+      if (s.name.toLowerCase().includes(q)) return true;
+      if ((s.tags || []).some(t => t.toLowerCase().includes(q))) return true;
+      if (s.matchSnippet) return true;
+      return false;
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
   getLatestSession() {
     const sessions = this.listSessions();
     if (sessions.length === 0) return null;

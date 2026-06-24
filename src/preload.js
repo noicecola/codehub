@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('codehub', {
   deletePreset: (id) => ipcRenderer.invoke('delete-preset', id),
 
   listSessions: () => ipcRenderer.invoke('list-sessions'),
+  searchSessions: (query) => ipcRenderer.invoke('search-sessions', query),
   getLatestSession: () => ipcRenderer.invoke('get-latest-session'),
   createSession: (name) => ipcRenderer.invoke('create-session', name),
   loadSession: (id) => ipcRenderer.invoke('load-session', id),

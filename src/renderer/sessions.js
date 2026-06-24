@@ -13,37 +13,32 @@ async function loadOrCreateSession() {
 }
 
 async function refreshSessionList() {
-  const sessions = await window.codehub.listSessions();
+  const query = (document.getElementById('session-search')?.value || '').trim();
+  const sessions = query
+    ? await window.codehub.searchSessions(query)
+    : await window.codehub.listSessions();
   const list = document.getElementById('session-list');
-  const query = (document.getElementById('session-search')?.value || '').toLowerCase();
   list.innerHTML = '';
 
-  const allTags = new Set();
-  sessions.forEach(s => (s.tags || []).forEach(t => allTags.add(t)));
-
-  sessions
-    .filter(s => {
-      if (!query) return true;
-      if (s.name.toLowerCase().includes(query)) return true;
-      return (s.tags || []).some(t => t.toLowerCase().includes(query));
-    })
-    .forEach(s => {
-      const item = document.createElement('div');
-      item.className = `session-item ${s.id === state.currentSessionId ? 'active' : ''}`;
-      const tagsHtml = (s.tags || []).map(t => `<span class="session-tag">${esc(t)}</span>`).join('');
-      item.innerHTML = `
-        <div class="session-info">
-          <div class="session-name">${esc(s.name)}</div>
-          ${tagsHtml ? `<div class="session-tags">${tagsHtml}</div>` : ''}
-          <div class="session-meta">${s.messageCount} 条 · ${formatTime(s.updatedAt)}</div>
-        </div>
-        <button class="session-delete" data-id="${s.id}">&times;</button>`;
-      item.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('session-delete') && !e.target.classList.contains('session-tag')) loadSession(s.id);
-      });
-      item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
-      list.appendChild(item);
+  sessions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = `session-item ${s.id === state.currentSessionId ? 'active' : ''}`;
+    const tagsHtml = (s.tags || []).map(t => `<span class="session-tag">${esc(t)}</span>`).join('');
+    const snippetHtml = s.matchSnippet ? `<div class="session-snippet">${esc(s.matchSnippet)}</div>` : '';
+    item.innerHTML = `
+      <div class="session-info">
+        <div class="session-name">${esc(s.name)}</div>
+        ${tagsHtml ? `<div class="session-tags">${tagsHtml}</div>` : ''}
+        ${snippetHtml}
+        <div class="session-meta">${s.messageCount} 条 · ${formatTime(s.updatedAt)}</div>
+      </div>
+      <button class="session-delete" data-id="${s.id}">&times;</button>`;
+    item.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('session-delete') && !e.target.classList.contains('session-tag')) loadSession(s.id);
     });
+    item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
+    list.appendChild(item);
+  });
 }
 
 async function createNewSession() {

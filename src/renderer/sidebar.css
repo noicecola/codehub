@@ -143,6 +143,16 @@
 }
 .session-tag:hover { background: rgba(59, 130, 246, 0.2); }
 
+.session-snippet {
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .session-delete {
   opacity: 0;
   border: none;

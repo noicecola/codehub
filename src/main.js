@@ -228,6 +228,8 @@ ipcMain.handle('delete-preset', (event, id) => {
 
 ipcMain.handle('list-sessions', () => sessionManager.listSessions());
 
+ipcMain.handle('search-sessions', (event, query) => sessionManager.searchSessions(query));
+
 ipcMain.handle('get-latest-session', () => {
   const session = sessionManager.getLatestSession();
   if (session) currentSessionId = session.id;
