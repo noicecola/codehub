@@ -75,6 +75,12 @@ function renderSessionHistory(session) {
     if (!panel) return;
     panel.innerHTML = '';
 
+    let hasOutput = false;
+    session.messages.forEach(msg => {
+      if (msg.toolOutputs && msg.toolOutputs[toolId]) hasOutput = true;
+    });
+    if (!hasOutput) return;
+
     session.messages.forEach(msg => {
       const userDiv = document.createElement('div');
       userDiv.className = 'panel-user-msg';

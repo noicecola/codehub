@@ -195,9 +195,17 @@ function showToolPanels() {
 
 function appendUserMessage(content) {
   showToolPanels();
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   state.selectedTools.forEach(toolId => {
     const panel = document.getElementById(`panel-content-${toolId}`);
     if (!panel) return;
+    if (panel.children.length > 0) {
+      const sep = document.createElement('div');
+      sep.className = 'panel-round-separator';
+      sep.textContent = timeStr;
+      panel.appendChild(sep);
+    }
     const msgDiv = document.createElement('div');
     msgDiv.className = 'panel-user-msg';
     msgDiv.textContent = `> ${content}`;

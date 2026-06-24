@@ -410,6 +410,27 @@ body {
   margin-top: 0;
 }
 
+.panel-round-separator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 10px 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  user-select: none;
+}
+.panel-round-separator::before,
+.panel-round-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.panel-round-separator:first-child {
+  margin-top: 0;
+}
+
 .panel-reply {
   white-space: pre-wrap;
   word-break: break-word;
