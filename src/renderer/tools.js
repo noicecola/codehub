@@ -37,7 +37,85 @@ function renderToolSelector(tools) {
   addBtn.addEventListener('click', showToolsModal);
   container.appendChild(addBtn);
 
+  renderToolPanels(tools);
   updateSelectedInfo();
+}
+
+function renderToolPanels(tools) {
+  const panelsContainer = document.getElementById('tool-panels');
+  tools.forEach(tool => {
+    let panel = document.getElementById(`panel-${tool.id}`);
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'tool-panel';
+      panel.id = `panel-${tool.id}`;
+      panel.draggable = true;
+      panel.dataset.toolId = tool.id;
+      panel.innerHTML = `
+        <div class="tool-panel-header">
+          <span class="tool-panel-drag-handle">⠿</span>
+          <span class="tool-panel-name">${esc(tool.name)}</span>
+          <span class="tool-panel-status" id="panel-status-${tool.id}">就绪</span>
+        </div>
+        <div class="tool-panel-content" id="panel-content-${tool.id}"></div>`;
+      panel.addEventListener('dragstart', handleDragStart);
+      panel.addEventListener('dragover', handleDragOver);
+      panel.addEventListener('dragenter', handleDragEnter);
+      panel.addEventListener('dragleave', handleDragLeave);
+      panel.addEventListener('drop', handleDrop);
+      panel.addEventListener('dragend', handleDragEnd);
+      panelsContainer.appendChild(panel);
+    }
+    panel.style.display = state.selectedTools.has(tool.id) ? '' : 'none';
+  });
+}
+
+let dragSrcEl = null;
+
+function handleDragStart(e) {
+  dragSrcEl = this;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', this.dataset.toolId);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragEnter(e) {
+  e.preventDefault();
+  if (this !== dragSrcEl) this.classList.add('drag-over');
+}
+
+function handleDragLeave() {
+  this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  if (dragSrcEl !== this) {
+    const fromId = dragSrcEl.dataset.toolId;
+    const toId = this.dataset.toolId;
+    const container = document.getElementById('tool-panels');
+    const children = Array.from(container.children);
+    const fromIdx = children.findIndex(c => c.dataset.toolId === fromId);
+    const toIdx = children.findIndex(c => c.dataset.toolId === toId);
+    if (fromIdx < toIdx) {
+      container.insertBefore(dragSrcEl, this.nextSibling);
+    } else {
+      container.insertBefore(dragSrcEl, this);
+    }
+  }
+  this.classList.remove('drag-over');
+}
+
+function handleDragEnd() {
+  document.querySelectorAll('.tool-panel').forEach(p => {
+    p.classList.remove('dragging', 'drag-over');
+  });
 }
 
 function updateSelectedInfo() {

@@ -243,6 +243,10 @@ function updatePanelStatus(toolId, status) {
     el.textContent = labels[status] || status;
     el.className = `tool-panel-status status-${status}`;
   }
+  const panel = document.getElementById(`panel-${toolId}`);
+  if (panel) {
+    panel.classList.toggle('running', status === 'running');
+  }
   updateToolStatus(toolId, status);
 }
 
