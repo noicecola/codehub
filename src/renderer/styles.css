@@ -556,6 +556,20 @@ body {
   word-break: break-word;
 }
 
+.show-more-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+}
+.show-more-btn:hover { border-color: var(--accent); color: var(--accent); }
+
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* === 状态指示 === */

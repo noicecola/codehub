@@ -287,7 +287,20 @@ function finalizeOutput(toolId, content, isError) {
       reply.classList.add('panel-reply-error');
       reply.innerHTML = formatError(content || '(无输出)');
     } else {
-      reply.innerHTML = renderMarkdown(content || '(无输出)');
+      const rendered = renderMarkdown(content || '(无输出)');
+      if (content && content.length > 8000) {
+        reply.innerHTML = renderMarkdown(content.substring(0, 8000));
+        const btn = document.createElement('button');
+        btn.className = 'show-more-btn';
+        btn.textContent = `显示全部 (${(content.length / 1000).toFixed(0)}k chars)`;
+        btn.addEventListener('click', () => {
+          reply.innerHTML = renderMarkdown(content);
+          reply.dataset.done = 'true';
+        });
+        reply.appendChild(btn);
+      } else {
+        reply.innerHTML = rendered;
+      }
     }
     panel.appendChild(reply);
   } else {
