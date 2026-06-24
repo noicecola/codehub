@@ -1,3 +1,27 @@
+async function retryTool(toolId) {
+  const content = state.lastMessageContent;
+  if (!content) return;
+  const workDir = state.currentWorkDir || document.getElementById('work-dir-select').value || '';
+
+  const reply = document.querySelector(`#panel-content-${toolId} .panel-reply:last-child`);
+  if (reply) {
+    reply.textContent = '';
+    reply.classList.remove('panel-reply-error');
+    reply.dataset.done = '';
+  }
+
+  updatePanelStatus(toolId, 'running');
+
+  try {
+    const result = await window.codehub.retryTool({ toolId, content, workDir });
+    finalizeOutput(toolId, result.content || result.error, !!result.error);
+    updatePanelStatus(toolId, result.error ? 'error' : 'completed');
+  } catch (err) {
+    finalizeOutput(toolId, err.message, true);
+    updatePanelStatus(toolId, 'error');
+  }
+}
+
 async function sendMessage() {
   const input = document.getElementById('message-input');
   const content = input.value.trim();
@@ -5,6 +29,7 @@ async function sendMessage() {
   if (!state.currentSessionId) return;
 
   input.value = '';
+  state.lastMessageContent = content;
   state.isRunning = true;
   updateSendButton();
   document.getElementById('send-btn').style.display = 'none';
@@ -254,6 +279,10 @@ function updatePanelStatus(toolId, status) {
   const panel = document.getElementById(`panel-${toolId}`);
   if (panel) {
     panel.classList.toggle('running', status === 'running');
+  }
+  const retryBtn = document.getElementById(`panel-retry-${toolId}`);
+  if (retryBtn) {
+    retryBtn.classList.toggle('hidden', status !== 'error');
   }
   updateToolStatus(toolId, status);
 }

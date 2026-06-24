@@ -92,6 +92,28 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
 
 ipcMain.handle('stop-tool', (event, toolId) => router.stop(toolId));
 
+ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
+  const adapter = registry.get(toolId);
+  if (!adapter) return { error: `Unknown tool: ${toolId}` };
+  const targetDir = workDir || __dirname;
+  try {
+    const result = await Promise.race([
+      adapter.run(content, workDir || targetDir, (chunk) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('stream-chunk', { toolId, chunk });
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5 * 60 * 1000)),
+    ]);
+    if (currentSessionId) {
+      sessionManager.updateToolOutput(currentSessionId, toolId, result);
+    }
+    return result;
+  } catch (err) {
+    return { error: err.message };
+  }
+});
+
 // === 产物 ===
 
 ipcMain.handle('read-file', (event, { dir, filePath }) => {

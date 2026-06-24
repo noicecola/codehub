@@ -4,5 +4,6 @@ const state = {
   currentSessionId: null,
   lastResults: {},
   lastArtifacts: {},
+  lastMessageContent: '',
   currentWorkDir: '',
 };

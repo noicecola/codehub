@@ -93,6 +93,19 @@ class SessionManager {
 
     return this.saveSession(session);
   }
+
+  updateToolOutput(sessionId, toolId, result) {
+    const session = this.loadSession(sessionId);
+    if (!session || session.messages.length === 0) return null;
+    const lastMsg = session.messages[session.messages.length - 1];
+    if (!lastMsg.toolOutputs) lastMsg.toolOutputs = {};
+    lastMsg.toolOutputs[toolId] = {
+      content: result.content || '',
+      exitCode: result.exitCode || 0,
+      error: result.error || null,
+    };
+    return this.saveSession(session);
+  }
 }
 
 module.exports = { SessionManager };

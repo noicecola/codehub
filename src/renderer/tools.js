@@ -56,8 +56,10 @@ function renderToolPanels(tools) {
           <span class="tool-panel-drag-handle">⠿</span>
           <span class="tool-panel-name">${esc(tool.name)}</span>
           <span class="tool-panel-status" id="panel-status-${tool.id}">就绪</span>
+          <button class="panel-retry-btn hidden" id="panel-retry-${tool.id}" title="重试">↻</button>
         </div>
         <div class="tool-panel-content" id="panel-content-${tool.id}"></div>`;
+      panel.querySelector('.panel-retry-btn').addEventListener('click', () => retryTool(tool.id));
       panel.addEventListener('dragstart', handleDragStart);
       panel.addEventListener('dragover', handleDragOver);
       panel.addEventListener('dragenter', handleDragEnter);
