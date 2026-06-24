@@ -1,0 +1,146 @@
+/* === 输入区（工具选择+输入一体） === */
+#input-area {
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  transition: background 0.15s;
+}
+#input-area.drag-over {
+  background: rgba(59, 130, 246, 0.05);
+  border-top-color: var(--accent);
+}
+
+#tool-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.tool-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.tool-checkbox:hover { border-color: var(--accent); }
+
+.tool-checkbox.selected {
+  background: rgba(88, 166, 255, 0.12);
+  border-color: var(--accent);
+}
+
+.tool-checkbox input { display: none; }
+.tool-checkbox.unavailable { opacity: 0.4; cursor: not-allowed; }
+
+.tool-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tool-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
+
+.tool-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tool-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.tool-status.selected {
+  background: var(--accent);
+  box-shadow: 0 0 4px var(--accent);
+}
+
+.tool-status.running {
+  background: var(--warning);
+  box-shadow: 0 0 6px var(--warning);
+  animation: breathe 1.5s ease-in-out infinite;
+}
+
+.tool-status.completed {
+  background: var(--success);
+  box-shadow: 0 0 4px var(--success);
+}
+
+.tool-status.error {
+  background: var(--danger);
+  box-shadow: 0 0 4px var(--danger);
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--warning); }
+  50% { opacity: 0.4; box-shadow: 0 0 2px var(--warning); }
+}
+
+#message-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: none;
+  line-height: 1.4;
+}
+
+#message-input:focus { outline: none; border-color: var(--accent); }
+
+#input-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+#selected-tools-info { font-size: 11px; color: var(--text-secondary); }
+#input-buttons { display: flex; gap: 6px; }
+
+button {
+  padding: 5px 14px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+#send-btn { background: var(--accent); color: #fff; }
+#send-btn:hover:not(:disabled) { background: var(--accent-hover); }
+#send-btn:disabled { background: var(--bg-tertiary); color: var(--text-secondary); cursor: not-allowed; }
+#stop-btn { background: var(--danger); color: #fff; }
+#stop-btn:hover { opacity: 0.9; }
+
