@@ -41,6 +41,7 @@ function setupEventListeners() {
   document.getElementById('artifacts-btn').addEventListener('click', showArtifactsModal);
   document.getElementById('export-btn').addEventListener('click', showExportModal);
   document.getElementById('manage-tools-btn').addEventListener('click', showToolsModal);
+  document.getElementById('manage-presets-btn').addEventListener('click', showPresetsModal);
   document.getElementById('manage-templates-btn').addEventListener('click', showTemplatesModal);
   document.getElementById('template-btn').addEventListener('click', toggleTemplateDropdown);
   document.getElementById('browse-dir-btn').addEventListener('click', browseDirectory);
@@ -52,6 +53,7 @@ function setupEventListeners() {
   });
   document.getElementById('add-tool-btn').addEventListener('click', addCustomTool);
   document.getElementById('add-tpl-btn').addEventListener('click', addTemplate);
+  document.getElementById('save-preset-btn').addEventListener('click', saveCurrentAsPreset);
 
   window.codehub.onStreamChunk(({ toolId, chunk }) => appendToOutput(toolId, chunk));
   window.codehub.onSessionUpdated(() => refreshSessionList());

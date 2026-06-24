@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('codehub', {
   saveTemplate: (tpl) => ipcRenderer.invoke('save-template', tpl),
   deleteTemplate: (id) => ipcRenderer.invoke('delete-template', id),
 
+  listPresets: () => ipcRenderer.invoke('list-presets'),
+  savePreset: (preset) => ipcRenderer.invoke('save-preset', preset),
+  deletePreset: (id) => ipcRenderer.invoke('delete-preset', id),
+
   listSessions: () => ipcRenderer.invoke('list-sessions'),
   getLatestSession: () => ipcRenderer.invoke('get-latest-session'),
   createSession: (name) => ipcRenderer.invoke('create-session', name),

@@ -202,6 +202,28 @@ ipcMain.handle('delete-template', (event, id) => {
   return true;
 });
 
+// === 工具预设 ===
+
+const presetsFile = path.join(app.getPath('userData'), 'presets.json');
+function loadPresets() {
+  try { return JSON.parse(fs.readFileSync(presetsFile, 'utf8')); }
+  catch { return []; }
+}
+function savePresets(p) { fs.writeFileSync(presetsFile, JSON.stringify(p, null, 2), 'utf8'); }
+
+ipcMain.handle('list-presets', () => loadPresets());
+ipcMain.handle('save-preset', (event, preset) => {
+  const p = loadPresets();
+  const idx = p.findIndex(x => x.id === preset.id);
+  if (idx >= 0) p[idx] = preset; else { preset.id = `preset-${Date.now()}`; p.push(preset); }
+  savePresets(p);
+  return preset;
+});
+ipcMain.handle('delete-preset', (event, id) => {
+  savePresets(loadPresets().filter(p => p.id !== id));
+  return true;
+});
+
 // === 会话 ===
 
 ipcMain.handle('list-sessions', () => sessionManager.listSessions());

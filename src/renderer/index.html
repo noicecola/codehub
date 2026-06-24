@@ -21,6 +21,7 @@
       <div id="session-list"></div>
       <div class="sidebar-footer">
         <button id="manage-tools-btn" class="sidebar-tool-btn">⚙️ 工具</button>
+        <button id="manage-presets-btn" class="sidebar-tool-btn">📋 预设</button>
         <button id="manage-templates-btn" class="sidebar-tool-btn">📝 模板</button>
       </div>
     </aside>
@@ -87,6 +88,9 @@
     </div>
     <div id="templates-modal" class="modal hidden">
       <div class="modal-content modal-narrow"><div class="modal-header"><h3>模板管理</h3><button class="close-btn" data-close="templates-modal">&times;</button></div><div class="modal-body"><div id="templates-list"></div><div class="add-template-form"><h4>添加模板</h4><input id="tpl-name-input" placeholder="名称" /><textarea id="tpl-content-input" placeholder="内容" rows="2"></textarea><button id="add-tpl-btn" class="primary-btn">添加</button></div></div></div>
+    </div>
+    <div id="presets-modal" class="modal hidden">
+      <div class="modal-content modal-narrow"><div class="modal-header"><h3>工具预设</h3><button class="close-btn" data-close="presets-modal">&times;</button></div><div class="modal-body"><div id="presets-list"></div><button id="save-preset-btn" class="primary-btn">保存当前选择为预设</button></div></div>
     </div>
   </div>
   <script src="marked.min.js"></script>

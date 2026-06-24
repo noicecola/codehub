@@ -226,3 +226,48 @@ async function browseDirectory() {
     select.appendChild(opt);
   }
 }
+
+// === 工具预设 ===
+
+async function showPresetsModal() {
+  const presets = await window.codehub.listPresets();
+  const list = document.getElementById('presets-list');
+  list.innerHTML = '';
+  presets.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.innerHTML = `
+      <div class="item-info">
+        <div class="item-name">${esc(p.name)}</div>
+        <div class="item-detail">${p.toolIds.length} 个工具</div>
+      </div>
+      <div class="item-actions">
+        <button class="edit-btn apply-preset" data-id="${p.id}" title="应用">✓</button>
+        <button class="delete-btn" data-id="${p.id}">&times;</button>
+      </div>`;
+    item.querySelector('.apply-preset').addEventListener('click', () => applyPreset(p));
+    item.querySelector('.delete-btn').addEventListener('click', async () => {
+      await window.codehub.deletePreset(p.id);
+      showPresetsModal();
+    });
+    list.appendChild(item);
+  });
+  document.getElementById('presets-modal').classList.remove('hidden');
+}
+
+function applyPreset(preset) {
+  state.selectedTools.clear();
+  preset.toolIds.forEach(id => state.selectedTools.add(id));
+  refreshToolSelector();
+  modalManager.closeById('presets-modal');
+  toast.success(`已应用预设: ${preset.name}`);
+}
+
+async function saveCurrentAsPreset() {
+  if (state.selectedTools.size === 0) { toast.info('请先选择工具'); return; }
+  const name = prompt('预设名称:');
+  if (!name) return;
+  await window.codehub.savePreset({ name, toolIds: Array.from(state.selectedTools) });
+  toast.success(`已保存预设: ${name}`);
+  modalManager.closeById('presets-modal');
+}
