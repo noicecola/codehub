@@ -230,15 +230,42 @@
 }
 
 .panel-user-msg {
-  color: var(--accent);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
   margin: 12px 0 6px 0;
-  font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 13px;
 }
 
 .panel-user-msg:first-child {
   margin-top: 0;
+}
+
+.msg-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 13px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.user-avatar {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.msg-text {
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 12px 12px 2px 12px;
+  max-width: 85%;
+  font-weight: 500;
 }
 
 .panel-round-separator {

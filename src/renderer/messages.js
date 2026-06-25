@@ -267,7 +267,7 @@ function appendUserMessage(content) {
     }
     const msgDiv = document.createElement('div');
     msgDiv.className = 'panel-user-msg';
-    msgDiv.textContent = `> ${content}`;
+    msgDiv.innerHTML = `<span class="msg-avatar user-avatar">👤</span><span class="msg-text">${esc(content)}</span>`;
     panel.appendChild(msgDiv);
   });
   scrollAllPanels();
