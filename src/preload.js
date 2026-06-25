@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('codehub', {
   stopTool: (toolId) => ipcRenderer.invoke('stop-tool', toolId),
   retryTool: (data) => ipcRenderer.invoke('retry-tool', data),
   onStreamChunk: (cb) => ipcRenderer.on('stream-chunk', (e, data) => cb(data)),
+  onToolDone: (cb) => ipcRenderer.on('tool-done', (e, data) => cb(data)),
 
   readFile: (data) => ipcRenderer.invoke('read-file', data),
 

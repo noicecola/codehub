@@ -72,6 +72,16 @@ function setupEventListeners() {
   });
 
   window.codehub.onStreamChunk(({ toolId, chunk }) => appendToOutput(toolId, chunk));
+  window.codehub.onToolDone(({ toolId, result, artifacts }) => {
+    finalizeOutput(toolId, result.content || result.error, !!result.error);
+    updatePanelStatus(toolId, result.error ? 'error' : 'completed');
+    if (result.elapsed) showToolStats(toolId, result);
+    if (artifacts?.length) {
+      state.lastArtifacts[toolId] = artifacts;
+      document.getElementById('artifacts-btn').style.display = 'inline-block';
+    }
+    checkAllDone();
+  });
   window.codehub.onSessionUpdated(() => refreshSessionList());
 
   document.addEventListener('click', (e) => {

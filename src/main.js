@@ -70,16 +70,23 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
       ]);
 
       const elapsed = Date.now() - startTime;
-      log(`${toolId} done, code=${result.exitCode}, ${elapsed}ms, content=${(result.content || '').substring(0, 100)}`);
+      log(`${toolId} done, code=${result.exitCode}, ${elapsed}ms`);
       result.elapsed = elapsed;
       results[toolId] = result;
 
       await snapshotPromise;
       artifacts[toolId] = await fileTracker.diff(toolId, targetDir);
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('tool-done', { toolId, result: { ...result }, artifacts: artifacts[toolId] || [] });
+      }
     } catch (err) {
       const elapsed = Date.now() - startTime;
       log(`${toolId} error: ${err.message} (${elapsed}ms)`);
       results[toolId] = { error: err.message, elapsed };
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('tool-done', { toolId, result: { error: err.message, elapsed }, artifacts: [] });
+      }
     }
   });
 

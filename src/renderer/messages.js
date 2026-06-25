@@ -68,14 +68,10 @@ async function sendMessage() {
       content, toolIds: Array.from(state.selectedTools), workDir,
     });
     state.lastResults = results;
-    state.lastArtifacts = artifacts || {};
-    document.getElementById('artifacts-btn').style.display =
-      Object.values(state.lastArtifacts).some(a => a?.length > 0) ? 'inline-block' : 'none';
-
-    for (const [toolId, result] of Object.entries(results)) {
-      finalizeOutput(toolId, result.content || result.error, !!result.error);
-      updatePanelStatus(toolId, result.error ? 'error' : 'completed');
-      if (result.elapsed) showToolStats(toolId, result);
+    if (artifacts) {
+      for (const [toolId, files] of Object.entries(artifacts)) {
+        if (files?.length) state.lastArtifacts[toolId] = files;
+      }
     }
   } catch (err) {
     state.selectedTools.forEach(id => {
@@ -101,6 +97,20 @@ function stopAll() {
   updateSendButton();
   document.getElementById('send-btn').style.display = 'inline-block';
   document.getElementById('stop-btn').style.display = 'none';
+}
+
+function checkAllDone() {
+  const allDone = Array.from(state.selectedTools).every(id => {
+    const el = document.getElementById(`panel-status-${id}`);
+    return el && (el.classList.contains('status-completed') || el.classList.contains('status-error'));
+  });
+  if (allDone && state.isRunning) {
+    state.isRunning = false;
+    updateSendButton();
+    document.getElementById('send-btn').style.display = 'inline-block';
+    document.getElementById('stop-btn').style.display = 'none';
+    refreshSessionList();
+  }
 }
 
 // === 输出面板 ===
