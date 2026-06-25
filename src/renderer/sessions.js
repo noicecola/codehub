@@ -101,7 +101,7 @@ function renderSessionHistory(session) {
     session.messages.forEach(msg => {
       const userDiv = document.createElement('div');
       userDiv.className = 'panel-user-msg';
-      userDiv.innerHTML = `<span class="msg-avatar user-avatar">👤</span><span class="msg-text">${esc(msg.content)}</span>`;
+      userDiv.innerHTML = `<span class="msg-text">${esc(msg.content)}</span><span class="msg-avatar user-avatar">👤</span>`;
       panel.appendChild(userDiv);
 
       if (msg.toolOutputs && msg.toolOutputs[toolId]) {
