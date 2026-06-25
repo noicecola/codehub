@@ -111,9 +111,9 @@ function renderSessionHistory(session) {
           replyDiv.dataset.done = 'true';
           if (output.error) {
             replyDiv.classList.add('panel-reply-error');
-            replyDiv.textContent = output.error;
+            replyDiv.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${esc(output.error)}</span>`;
           } else {
-            replyDiv.innerHTML = renderMarkdown(output.content || '(无输出)');
+            replyDiv.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(output.content || '(无输出)')}</span>`;
           }
           panel.appendChild(replyDiv);
         }

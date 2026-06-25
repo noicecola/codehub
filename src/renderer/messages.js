@@ -293,33 +293,38 @@ function finalizeOutput(toolId, content, isError) {
   if (!reply) {
     reply = document.createElement('div');
     reply.className = 'panel-reply';
+    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span>`;
+    const body = reply.querySelector('.reply-body');
     if (isError) {
       reply.classList.add('panel-reply-error');
-      reply.innerHTML = formatError(content || '(无输出)');
+      body.innerHTML = formatError(content || '(无输出)');
     } else {
       const rendered = renderMarkdown(content || '(无输出)');
       if (content && content.length > 8000) {
-        reply.innerHTML = renderMarkdown(content.substring(0, 8000));
+        body.innerHTML = renderMarkdown(content.substring(0, 8000));
         const btn = document.createElement('button');
         btn.className = 'show-more-btn';
         btn.textContent = `显示全部 (${(content.length / 1000).toFixed(0)}k chars)`;
         btn.addEventListener('click', () => {
-          reply.innerHTML = renderMarkdown(content);
+          body.innerHTML = renderMarkdown(content);
           reply.dataset.done = 'true';
         });
-        reply.appendChild(btn);
+        body.appendChild(btn);
       } else {
-        reply.innerHTML = rendered;
+        body.innerHTML = rendered;
       }
     }
     panel.appendChild(reply);
   } else {
     reply.dataset.done = 'true';
+    const body = reply.querySelector('.reply-body');
     if (isError) {
       reply.classList.add('panel-reply-error');
-      reply.innerHTML = formatError(content || reply.textContent || '(无输出)');
+      if (body) body.innerHTML = formatError(content || reply.textContent || '(无输出)');
+      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${formatError(content || '(无输出)')}</span>`;
     } else if (content) {
-      reply.innerHTML = renderMarkdown(content);
+      if (body) body.innerHTML = renderMarkdown(content);
+      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(content)}</span>`;
     }
   }
   scrollPanel(toolId);

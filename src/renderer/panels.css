@@ -259,6 +259,10 @@
   background: rgba(59, 130, 246, 0.15);
 }
 
+.ai-avatar {
+  background: rgba(16, 185, 129, 0.15);
+}
+
 .msg-text {
   background: rgba(59, 130, 246, 0.08);
   color: var(--text-primary);
@@ -290,8 +294,9 @@
 }
 
 .panel-reply {
-  white-space: pre-wrap;
-  word-break: break-word;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   margin-bottom: 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
@@ -299,6 +304,12 @@
   font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 12.5px;
   line-height: 1.65;
+}
+.reply-body {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .panel-reply h1, .panel-reply h2, .panel-reply h3, .panel-reply h4 {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
