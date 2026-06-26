@@ -39,6 +39,7 @@ function renderToolSelector(tools) {
 
   renderToolPanels(tools);
   updateSelectedInfo();
+  updateSendButton();
 }
 
 function renderToolPanels(tools) {
