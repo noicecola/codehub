@@ -95,7 +95,9 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
 
   if (currentSessionId) {
     sessionManager.addMessage(currentSessionId, { content, toolResults: results, artifacts });
-    mainWindow.webContents.send('session-updated', currentSessionId);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('session-updated', currentSessionId);
+    }
   }
   return { results, artifacts };
 });
@@ -127,8 +129,15 @@ ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
 // === 产物 ===
 
 ipcMain.handle('read-file', (event, { dir, filePath }) => {
-  try { return fs.readFileSync(path.join(dir, filePath), 'utf8'); }
-  catch (err) { return `Error: ${err.message}`; }
+  try {
+    const resolved = path.resolve(dir, filePath);
+    if (!resolved.startsWith(path.resolve(dir))) {
+      return { error: 'Invalid path' };
+    }
+    return { content: fs.readFileSync(resolved, 'utf8') };
+  } catch (err) {
+    return { error: err.message };
+  }
 });
 
 // === 导出 ===
@@ -165,17 +174,24 @@ ipcMain.handle('export-session', async (event, { sessionId, format }) => {
 // === 自定义工具 ===
 
 ipcMain.handle('add-custom-tool', (event, tool) => {
+  if (!tool || !tool.name) return { error: 'Name is required' };
   const adapter = registry.addCustom(tool);
   return { id: adapter.id, name: adapter.name };
 });
 
 ipcMain.handle('remove-custom-tool', (event, toolId) => {
+  if (!toolId) return false;
   registry.removeCustom(toolId);
   return true;
 });
 
 ipcMain.handle('edit-custom-tool', (event, { id, name, command, args }) => {
-  registry.editCustom(id, { name, command, args });
+  if (!id) return false;
+  const updates = {};
+  if (name) updates.name = name;
+  if (command) updates.command = command;
+  if (args && args.length > 0) updates.args = args;
+  registry.editCustom(id, updates);
   return true;
 });
 

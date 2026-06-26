@@ -57,7 +57,11 @@ class AdapterRegistry {
           this.register(createCustomAdapter(tool));
         }
       });
-    } catch {}
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        console.error('Failed to load custom tools:', err.message);
+      }
+    }
   }
 
   saveCustomTools() {
@@ -92,7 +96,7 @@ class AdapterRegistry {
     if (!adapter) return;
     if (updates.name) adapter.name = updates.name;
     if (updates.command) adapter.transport.command = updates.command;
-    if (updates.args) adapter.args = updates.args;
+    if (Array.isArray(updates.args) && updates.args.length > 0) adapter.args = updates.args;
     this.saveCustomTools();
   }
 }

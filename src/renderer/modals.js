@@ -29,13 +29,15 @@ async function loadFileContent(file) {
   if (file.type === 'deleted') { el.innerHTML = `<pre style="color:var(--danger)">[已删除] ${file.path}</pre>`; return; }
   el.innerHTML = '<p class="placeholder">加载中...</p>';
   try {
-    const content = await window.codehub.readFile({
+    const result = await window.codehub.readFile({
       dir: state.currentWorkDir || document.getElementById('work-dir-select').value || '.',
       filePath: file.path,
     });
-    el.innerHTML = content.startsWith('Error')
-      ? `<pre style="color:var(--danger)">${esc(content)}</pre>`
-      : `<pre>${esc(content)}</pre>`;
+    if (result.error) {
+      el.innerHTML = `<pre style="color:var(--danger)">${esc(result.error)}</pre>`;
+    } else {
+      el.innerHTML = `<pre>${esc(result.content)}</pre>`;
+    }
   } catch (err) { el.innerHTML = `<pre style="color:var(--danger)">${err.message}</pre>`; }
 }
 

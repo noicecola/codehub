@@ -24,7 +24,9 @@ class SessionManager {
         if (data.updatedAt < cutoff) {
           fs.unlinkSync(path.join(this.dataDir, f));
         }
-      } catch {}
+      } catch (err) {
+        console.error(`Failed to process session ${f}:`, err.message);
+      }
     });
   }
 
