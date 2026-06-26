@@ -1,109 +1,109 @@
 # CodeHub
 
-多工具消息分发桌面端 — 同时向多个 AI 编码工具发送消息，并行执行并对比结果。
+Multi-tool message dispatch desktop app — Send the same message to multiple AI coding tools simultaneously, execute in parallel, and compare results.
 
-## 功能
+## Features
 
-### 核心
-- **多工具并行**: 同时向 9 个内置 AI 编码工具发送同一消息，先完成先显示
-- **流式输出**: 实时显示各工具的响应过程
-- **结果对比**: 并排对比不同工具的输出
-- **产物追踪**: 自动检测工具执行后的文件变更（创建/修改/删除）
-- **会话管理**: 保存/加载/导出对话历史（支持 JSON 和 Markdown）
-- **消息模板**: 内置常用模板（解释代码、代码审查、重构、写测试、调试）
-- **自定义工具**: 支持添加 CLI 命令或 HTTP API 接口工具
+### Core
+- **Multi-tool parallel**: Send messages to 9 built-in AI coding tools at once, results appear as each tool finishes
+- **Streaming output**: Real-time display of each tool's response process
+- **Result comparison**: Side-by-side comparison of different tools' outputs
+- **Artifact tracking**: Automatically detect file changes (create/modify/delete) after tool execution
+- **Session management**: Save/load/export conversation history (JSON and Markdown)
+- **Message templates**: Built-in templates (explain code, code review, refactor, write tests, debug)
+- **Custom tools**: Support adding CLI command or HTTP API interface tools
 
 ### UI/UX
-- **Markdown 渲染**: 输出支持 Markdown 格式 + 代码语法高亮（15 种语言）
-- **用户/AI 头像**: 消息气泡带角色头像，用户右对齐，AI 左对齐
-- **消息轮次分隔**: 每轮对话之间有时间戳分隔线
-- **边框呼吸动画**: 工具运行时边框亮暗变化，每工具独立颜色
-- **面板拖拽排序**: 拖拽面板调整顺序
-- **彩色边框**: 每个工具独立颜色（红/蓝/绿/橙/紫/青/棕）
-- **耗时统计**: 每工具显示响应时间（秒）和输出长度（字符数）
+- **Markdown rendering**: Output supports Markdown format + code syntax highlighting (15 languages)
+- **User/AI avatars**: Message bubbles with role avatars, user right-aligned, AI left-aligned
+- **Message round separators**: Timestamp dividers between each conversation round
+- **Border breathing animation**: Border brightness pulses during tool execution, each tool has its own color
+- **Panel drag-to-reorder**: Drag panels to adjust order
+- **Colored borders**: Each tool has its own color (red/blue/green/orange/purple/teal/brown)
+- **Timing stats**: Each tool shows response time (seconds) and output length (characters)
 
-### 交互
-- **重试单个工具**: 失败后面板显示重试按钮，单独重跑
-- **错误详情展开**: 长错误信息可折叠/展开
-- **消息草稿**: 切换会话时自动保存未发送的输入内容
-- **文件拖拽**: 拖拽文件路径到输入框
-- **大输出优化**: 超过 8k 字符自动截断，点击"显示全部"展开
-- **会话搜索**: 搜索会话名称、标签、对话内容
-- **工具预设**: 保存常用工具组合，一键切换
-- **会话标签**: 为会话添加标签，分类管理
+### Interaction
+- **Retry single tool**: Retry button appears on failed panels, re-run individually
+- **Error detail expand**: Long error messages can be collapsed/expanded
+- **Message draft**: Auto-saves unsent input when switching sessions
+- **File drag & drop**: Drag file paths into the input area
+- **Large output optimization**: Auto-truncates at 8k characters, click "Show all" to expand
+- **Session search**: Search session names, tags, and conversation content
+- **Tool presets**: Save common tool combinations, switch with one click
+- **Session tags**: Add tags to sessions for categorization
 
-### 快捷键
-| 快捷键 | 功能 |
-|--------|------|
-| `Ctrl+Enter` | 发送消息 |
-| `Ctrl+N` | 新建会话 |
-| `Ctrl+K` | 搜索会话 |
-| `Ctrl+B` | 折叠/展开侧边栏 |
+### Keyboard Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Enter` | Send message |
+| `Ctrl+N` | New session |
+| `Ctrl+K` | Search sessions |
+| `Ctrl+B` | Toggle sidebar |
 
-### 数据管理
-- **会话导出**: Markdown / JSON 格式
-- **会话自动清理**: 30 天自动清理旧会话
-- **会话标签搜索**: 按标签过滤会话
-- **消息内容搜索**: 搜索对话历史中的关键词
+### Data Management
+- **Session export**: Markdown / JSON format
+- **Auto session cleanup**: Automatically cleans up sessions older than 30 days
+- **Tag search**: Filter sessions by tags
+- **Content search**: Search keywords in conversation history
 
-### 技术特性
-- **配置驱动架构**: 新增工具只需在 `adapters.config.js` 添加一行配置
-- **单元测试**: 34 个测试覆盖核心模块
-- **CSS 模块化**: 样式按功能拆分为 5 个文件
-- **Electron 安全**: `contextIsolation: true`，IPC 全部通过 preload 桥接
+### Technical
+- **Config-driven architecture**: Adding new tools only requires one line in `adapters.config.js`
+- **Unit tests**: 34 tests covering core modules
+- **CSS modularization**: Styles split into 5 files by functionality
+- **Electron security**: `contextIsolation: true`, all IPC via preload bridge
 
-## 架构
+## Architecture
 
 ```
 src/
-├── main.js              # Electron 主进程（IPC 处理）
-├── preload.js           # 上下文桥接（安全 API 暴露）
-├── session-manager.js   # 会话持久化（JSON 文件）
-├── file-tracker.js      # 文件变更追踪（快照 + diff）
+├── main.js              # Electron main process (IPC handling)
+├── preload.js           # Context bridge (secure API exposure)
+├── session-manager.js   # Session persistence (JSON files)
+├── file-tracker.js      # File change tracking (snapshot + diff)
 ├── core/
-│   ├── adapters.config.js # 适配器配置表（新增工具只需改这里）
-│   ├── adapter.js       # 适配器（配置驱动工厂）
-│   ├── transport.js     # 通信层（CLI / HTTP）
-│   ├── parser.js        # 输出解析（Claude/MiMo/纯文本）
-│   ├── registry.js      # 适配器注册中心
-│   └── router.js        # 工具停止控制
+│   ├── adapters.config.js # Adapter config table (add new tools here)
+│   ├── adapter.js       # Adapter (config-driven factory)
+│   ├── transport.js     # Communication layer (CLI / HTTP)
+│   ├── parser.js        # Output parsing (Claude/MiMo/plain text)
+│   ├── registry.js      # Adapter registry
+│   └── router.js        # Tool stop control
 ├── components/
-│   ├── modal.js         # 模态框管理
-│   ├── toast.js         # 通知提示
-│   └── diff-viewer.js   # 结果对比视图
+│   ├── modal.js         # Modal management
+│   ├── toast.js         # Toast notifications
+│   └── diff-viewer.js   # Result comparison view
 └── renderer/
-    ├── index.html       # 界面结构
-    ├── state.js         # 全局状态
-    ├── app.js           # 入口 + 事件绑定
-    ├── tools.js         # 工具选择器 + 管理
-    ├── messages.js      # 消息发送
-    ├── output.js        # 输出面板管理
-    ├── modals.js        # 弹窗管理
-    ├── sessions.js      # 会话侧边栏
-    ├── base.css         # 变量 + 布局
-    ├── sidebar.css      # 侧边栏样式
-    ├── panels.css       # 面板样式
-    ├── input.css        # 输入区样式
-    └── modals.css       # 弹窗样式
+    ├── index.html       # UI structure
+    ├── state.js         # Global state
+    ├── app.js           # Entry point + event binding
+    ├── tools.js         # Tool selector + management
+    ├── messages.js      # Message sending
+    ├── output.js        # Output panel management
+    ├── modals.js        # Modal management
+    ├── sessions.js      # Session sidebar
+    ├── base.css         # Variables + layout
+    ├── sidebar.css      # Sidebar styles
+    ├── panels.css       # Panel styles
+    ├── input.css        # Input area styles
+    └── modals.css       # Modal styles
 ```
 
-## 安装
+## Installation
 
 ```bash
 npm install
 ```
 
-## 运行
+## Running
 
 ```bash
-# 正常启动
+# Normal start
 npm start
 
-# 开发模式（自动打开 DevTools）
+# Development mode (auto-opens DevTools)
 npm run dev
 ```
 
-## 构建
+## Building
 
 ```bash
 # macOS
@@ -116,14 +116,14 @@ npm run build:win
 npm run build:linux
 ```
 
-构建产物输出到 `dist/` 目录。
+Build output goes to the `dist/` directory.
 
-## 前置要求
+## Prerequisites
 
-需要安装至少一个 AI 编码工具：
+At least one AI coding tool must be installed:
 
-| 工具 | 命令 | 安装 |
-|------|------|------|
+| Tool | Command | Install |
+|------|---------|---------|
 | Claude Code | `claude` | [docs.anthropic.com](https://docs.anthropic.com/claude-code) |
 | MiMo Code | `mimo` | [github.com/xiaomi/mimo-code](https://github.com/xiaomi/mimo-code) |
 | Codex CLI | `codex` | [github.com/openai/codex](https://github.com/openai/codex) |
@@ -131,112 +131,103 @@ npm run build:linux
 | Copilot CLI | `gh copilot` | [github.com/features/copilot](https://github.com/features/copilot) |
 | OpenCode | `opencode` | [github.com/opencode-ai/opencode](https://github.com/opencode-ai/opencode) |
 | Kilo Code | `kilo` | [github.com/Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
-| Qwen Code | `qwen` | [qwen 文档](https://help.aliyun.com/zh/model-studio/) |
+| Qwen Code | `qwen` | [Qwen docs](https://help.aliyun.com/zh/model-studio/) |
 | Trae | `trae` | [trae.ai](https://trae.ai) |
 
-未安装的工具会显示为"未安装"状态，不影响其他工具使用。
+Uninstalled tools will show as "Not installed" and won't affect other tools.
 
-## 使用
+## Usage
 
-1. 在底部工具选择器中勾选要使用的工具
-2. 选择工作目录（可选）
-3. 输入消息，按 `Ctrl+Enter` 或点击"发送"
-4. 查看各工具的并行输出
-5. 使用"对比"按钮并排查看结果
-6. 使用"产物"按钮查看文件变更
+1. Select tools in the bottom tool selector
+2. Choose a working directory (optional)
+3. Type a message, press `Ctrl+Enter` or click "Send"
+4. View parallel outputs from each tool
+5. Use the "Compare" button to view results side by side
+6. Use the "Artifacts" button to view file changes
 
-### 示例：同时向 9 个工具发送消息
+### Example: Sending to all 9 tools simultaneously
 
 ```
-输入：请用 Python 实现一个快速排序算法
+Input: Implement a quicksort algorithm in Python
 
-输出面板：
+Output panels:
 ┌─────────────────┬─────────────────┬─────────────────┐
 │ Claude Code     │ MiMo Code       │ Codex CLI       │
-│ [流式输出中...]  │ [流式输出中...]   │ [流式输出中...]   │
+│ [streaming...]  │ [streaming...]  │ [streaming...]  │
 │                 │                 │                 │
 ├─────────────────┼─────────────────┼─────────────────┤
 │ Gemini CLI      │ Copilot CLI     │ OpenCode        │
-│ [流式输出中...]  │ [流式输出中...]   │ [流式输出中...]   │
+│ [streaming...]  │ [streaming...]  │ [streaming...]  │
 │                 │                 │                 │
 ├─────────────────┼─────────────────┼─────────────────┤
 │ Kilo Code       │ Qwen Code       │ Trae            │
-│ [流式输出中...]  │ [流式输出中...]   │ [流式输出中...]   │
+│ [streaming...]  │ [streaming...]  │ [streaming...]  │
 │                 │                 │                 │
 └─────────────────┴─────────────────┴─────────────────┘
 ```
 
-### 快捷键
+### Tool Presets
 
-| 快捷键 | 功能 |
-|--------|------|
-| `Ctrl+Enter` | 发送消息 |
-| `Ctrl+N` | 新建会话 |
-| `Ctrl+K` | 搜索会话 |
-| `Ctrl+B` | 折叠/展开侧边栏 |
+Save common tool combinations and switch with one click:
 
-### 工具预设
+- **Frontend**: Claude Code + Codex CLI + Gemini CLI
+- **Backend**: Claude Code + MiMo Code + Qwen Code
+- **All tools**: All 9 tools
+- **Custom**: Any tool combination
 
-保存常用的工具组合，一键切换：
+Presets are stored at `~/Library/Application Support/codehub/presets.json`
 
-- **前端组**: Claude Code + Codex CLI + Gemini CLI
-- **后端组**: Claude Code + MiMo Code + Qwen Code
-- **全量组**: 全部 9 个工具
-- **自定义**: 任意工具组合
+### Session Tags
 
-预设存储在 `~/Library/Application Support/codehub/presets.json`
+Add tags to sessions for easy categorization:
 
-### 会话标签
+- `#frontend` `#backend` `#debug` `#refactor`
+- Search automatically matches tag content
 
-为会话添加标签，方便分类管理：
+## Custom Tools
 
-- `#前端` `#后端` `#调试` `#重构`
-- 搜索时自动匹配标签内容
+Click the "Tools" button in the sidebar to add custom tools:
 
-## 自定义工具
-
-点击侧边栏"工具"按钮，添加自定义工具：
-
-### CLI 命令
-- **名称**: 显示名称
-- **命令**: CLI 命令（如 `python3`、`node`）
-- **参数**: 命令行参数（可选）
+### CLI Command
+- **Name**: Display name
+- **Command**: CLI command (e.g., `python3`, `node`)
+- **Args**: Command-line arguments (optional)
 
 ### HTTP API
-- **名称**: 显示名称
-- **URL**: API 地址（如 `http://localhost:8080`）
-- **路径**: 接口路径（默认 `/chat`）
+- **Name**: Display name
+- **URL**: API address (e.g., `http://localhost:8080`)
+- **Path**: Endpoint path (default `/chat`)
 
-自定义工具存储在 `~/Library/Application Support/codehub/custom-tools.json`
+Custom tools are stored at `~/Library/Application Support/codehub/custom-tools.json`
 
-## 导出
+## Export
 
-支持将会话导出为：
-- **Markdown**: 可读的对话记录
-- **JSON**: 完整的结构化数据
+Supports exporting sessions as:
+- **Markdown**: Readable conversation records
+- **JSON**: Complete structured data
 
-## 数据存储
+## Data Storage
 
-| 数据 | 路径 |
+| Data | Path |
 |------|------|
-| 会话 | `~/Library/Application Support/codehub/sessions/` |
-| 自定义工具 | `~/Library/Application Support/codehub/custom-tools.json` |
-| 预设 | `~/Library/Application Support/codehub/presets.json` |
-| 模板 | `~/Library/Application Support/codehub/templates.json` |
+| Sessions | `~/Library/Application Support/codehub/sessions/` |
+| Custom tools | `~/Library/Application Support/codehub/custom-tools.json` |
+| Presets | `~/Library/Application Support/codehub/presets.json` |
+| Templates | `~/Library/Application Support/codehub/templates.json` |
 
-## 测试
+## Testing
 
 ```bash
 npm test
 ```
 
-34 个单元测试覆盖：
-- Parser（Claude/MiMo/纯文本/流式解析）
-- Transport（CLI/HTTP）
-- Router（工具停止）
-- FileTracker（文件变更检测）
-- Adapter Config（配置表验证）
+34 unit tests covering:
+- Parser (Claude/MiMo/plain text/streaming)
+- Transport (CLI/HTTP)
+- Router (tool stop)
+- FileTracker (file change detection)
+- Adapter Config (config table validation)
 
-## 许可
+## License
 
 MIT
