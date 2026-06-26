@@ -4,7 +4,7 @@
 
 ## 功能
 
-- **多工具并行**: 同时向 Claude Code、MiMo Code 等多个工具发送同一消息
+- **多工具并行**: 同时向 Claude Code、MiMo Code、Codex CLI、Gemini CLI 等多个工具发送同一消息
 - **流式输出**: 实时显示各工具的响应过程
 - **结果对比**: 并排对比不同工具的输出
 - **产物追踪**: 自动检测工具执行后的文件变更（创建/修改/删除）
@@ -79,8 +79,17 @@ npm run build:linux
 
 需要安装至少一个 AI 编码工具：
 
-- [Claude Code](https://docs.anthropic.com/claude-code) — `claude` 命令
-- [MiMo Code](https://github.com/xiaomi/mimo-code) — `mimo` 命令
+| 工具 | 命令 | 安装 |
+|------|------|------|
+| Claude Code | `claude` | [docs.anthropic.com](https://docs.anthropic.com/claude-code) |
+| MiMo Code | `mimo` | [github.com/xiaomi/mimo-code](https://github.com/xiaomi/mimo-code) |
+| Codex CLI | `codex` | [github.com/openai/codex](https://github.com/openai/codex) |
+| Gemini CLI | `gemini` | [github.com/google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) |
+| Copilot CLI | `gh copilot` | [github.com/features/copilot](https://github.com/features/copilot) |
+| OpenCode | `opencode` | [github.com/opencode-ai/opencode](https://github.com/opencode-ai/opencode) |
+| Kilo Code | `kilo` | [github.com/Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
+| Qwen Code | `qwen` | [qwen 文档](https://help.aliyun.com/zh/model-studio/) |
+| Trae | `trae` | [trae.ai](https://trae.ai) |
 
 未安装的工具会显示为"未安装"状态，不影响其他工具使用。
 

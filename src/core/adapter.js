@@ -1,22 +1,26 @@
 // === Adapter 层 ===
-// 统一适配器接口，组合 Transport + Parser
+// 统一适配器接口，组合 Transport + Parser，支持配置驱动
 
-const { CLITransport } = require('./transport');
+const { CLITransport, HTTPTransport } = require('./transport');
 const { ClaudeParser, MimoParser, PlainTextParser, StreamParser } = require('./parser');
 
 class ToolAdapter {
   constructor(config) {
     this.id = config.id;
     this.name = config.name;
+    this.builtin = config.builtin || false;
     this.transport = config.transport;
     this.streamParser = config.streamParser;
     this.args = config.args || [];
     this.options = config.options || {};
+    this._prepareArgs = config.prepareArgs || null;
   }
 
   isAvailable() {
     try {
-      require('child_process').execSync(`which ${this.transport.command}`, { stdio: 'ignore' });
+      const cmd = this.transport.command || this.transport.baseUrl;
+      if (!cmd) return false;
+      require('child_process').execSync(`which ${cmd}`, { stdio: 'ignore' });
       return true;
     } catch {
       return false;
@@ -45,7 +49,6 @@ class ToolAdapter {
       },
     };
 
-    // 内置适配器在 run 时动态设置工作目录参数
     if (this._prepareArgs) {
       this._prepareArgs(workDir);
     }
@@ -66,41 +69,36 @@ class ToolAdapter {
   }
 }
 
-// === 内置适配器工厂 ===
+// === Parser 映射 ===
 
-function createClaudeCodeAdapter() {
+const PARSER_MAP = {
+  claude: () => new ClaudeParser(),
+  mimo: () => new MimoParser(),
+  text: () => new PlainTextParser(),
+};
+
+// === 配置驱动的适配器工厂 ===
+
+function createAdapterFromConfig(config) {
+  const parserFactory = PARSER_MAP[config.parser] || PARSER_MAP.text;
+  const transport = config.url
+    ? new HTTPTransport(config.url, { path: config.path || '/chat', body: config.body || {} })
+    : new CLITransport(config.command, [...config.args], { messageAsArg: config.messageAsArg || false });
+
   const adapter = new ToolAdapter({
-    id: 'claude-code',
-    name: 'Claude Code',
-    transport: new CLITransport('claude', [
-      '--print', '--verbose', '--output-format', 'stream-json',
-    ]),
-    streamParser: new ClaudeParser(),
-  });
-
-  // 动态添加 --add-dir 参数
-  adapter._prepareArgs = function(workDir) {
-    if (workDir) {
-      this.transport.args = [
-        '--print', '--verbose', '--output-format', 'stream-json',
-        '--add-dir', workDir,
-      ];
-    }
-  };
-
-  return adapter;
-}
-
-function createMimoCodeAdapter() {
-  const adapter = new ToolAdapter({
-    id: 'mimo-code',
-    name: 'MiMo Code',
-    transport: new CLITransport('mimo', ['run', '--format', 'json', '--pure'], { messageAsArg: true }),
-    streamParser: new MimoParser(),
+    id: config.id,
+    name: config.name,
+    builtin: config.builtin || false,
+    transport,
+    streamParser: parserFactory(),
+    args: config.args || [],
+    prepareArgs: config.prepareArgs || null,
   });
 
   return adapter;
 }
+
+// === 自定义适配器工厂 ===
 
 function createCustomAdapter(config) {
   const args = Array.isArray(config.args) ? config.args : [];
@@ -123,4 +121,4 @@ function createCustomAdapter(config) {
   });
 }
 
-module.exports = { ToolAdapter, createClaudeCodeAdapter, createMimoCodeAdapter, createCustomAdapter };
+module.exports = { ToolAdapter, createAdapterFromConfig, createCustomAdapter };

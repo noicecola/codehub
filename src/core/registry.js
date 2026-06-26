@@ -1,10 +1,11 @@
 // === Registry 层 ===
-// 适配器注册中心，动态管理工具
+// 适配器注册中心，配置驱动，动态管理工具
 
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
-const { createClaudeCodeAdapter, createMimoCodeAdapter, createCustomAdapter } = require('./adapter');
+const { createAdapterFromConfig, createCustomAdapter } = require('./adapter');
+const { ADAPTERS } = require('./adapters.config');
 
 class AdapterRegistry {
   constructor() {
@@ -14,9 +15,10 @@ class AdapterRegistry {
   }
 
   init() {
-    // 注册内置适配器
-    this.register(createClaudeCodeAdapter());
-    this.register(createMimoCodeAdapter());
+    // 从配置表批量注册内置适配器
+    ADAPTERS.forEach(config => {
+      this.register(createAdapterFromConfig(config));
+    });
 
     // 加载自定义适配器
     this.loadCustomTools();
@@ -39,11 +41,12 @@ class AdapterRegistry {
   }
 
   list() {
+    const builtinIds = ADAPTERS.map(a => a.id);
     return this.getAll().map(a => ({
       id: a.id,
       name: a.name,
       available: a.isAvailable(),
-      builtin: ['claude-code', 'mimo-code'].includes(a.id),
+      builtin: builtinIds.includes(a.id),
     }));
   }
 
@@ -65,8 +68,9 @@ class AdapterRegistry {
   }
 
   saveCustomTools() {
+    const builtinIds = ADAPTERS.map(a => a.id);
     const tools = this.getAll()
-      .filter(a => !['claude-code', 'mimo-code'].includes(a.id))
+      .filter(a => !builtinIds.includes(a.id))
       .map(a => ({
         id: a.id,
         name: a.name,
