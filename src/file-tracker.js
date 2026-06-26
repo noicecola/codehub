@@ -67,12 +67,6 @@ class FileTracker {
   safeStat(filePath) {
     try { return fs.statSync(filePath); } catch { return null; }
   }
-
-  readFile(dir, relPath) {
-    try {
-      return fs.readFileSync(path.join(dir, relPath), 'utf8');
-    } catch { return null; }
-  }
 }
 
 module.exports = { FileTracker };

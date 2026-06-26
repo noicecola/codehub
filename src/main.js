@@ -261,8 +261,6 @@ ipcMain.handle('delete-session', (event, id) => {
   return r;
 });
 
-ipcMain.handle('get-current-session-id', () => currentSessionId);
-
 ipcMain.handle('update-session-tags', (event, { sessionId, tags }) => {
   const session = sessionManager.loadSession(sessionId);
   if (!session) return null;

@@ -16,21 +16,32 @@
 
 ```
 src/
-├── main.js              # Electron 主进程
-├── preload.js           # 上下文桥接
-├── session-manager.js   # 会话持久化
-├── file-tracker.js      # 文件变更追踪
+├── main.js              # Electron 主进程（IPC 处理）
+├── preload.js           # 上下文桥接（安全 API 暴露）
+├── session-manager.js   # 会话持久化（JSON 文件）
+├── file-tracker.js      # 文件变更追踪（快照 + diff）
 ├── core/
 │   ├── adapter.js       # 适配器（组合 Transport + Parser）
 │   ├── transport.js     # 通信层（CLI / HTTP）
 │   ├── parser.js        # 输出解析（Claude/MiMo/纯文本）
 │   ├── registry.js      # 适配器注册中心
-│   └── router.js        # 消息路由（并行广播）
-├── adapters/            # 旧版适配器（已迁移到 core/）
+│   └── router.js        # 工具停止控制
+├── components/
+│   ├── modal.js         # 模态框管理
+│   ├── toast.js         # 通知提示
+│   └── diff-viewer.js   # 结果对比视图
 └── renderer/
-    ├── index.html       # 界面
-    ├── app.js           # 渲染进程逻辑
-    └── styles.css       # 样式
+    ├── index.html       # 界面结构
+    ├── state.js         # 全局状态
+    ├── app.js           # 入口 + 事件绑定
+    ├── tools.js         # 工具选择器 + 管理
+    ├── messages.js      # 消息发送 + 输出渲染
+    ├── sessions.js      # 会话侧边栏
+    ├── base.css         # 变量 + 布局
+    ├── sidebar.css      # 侧边栏样式
+    ├── panels.css       # 面板样式
+    ├── input.css        # 输入区样式
+    └── modals.css       # 弹窗样式
 ```
 
 ## 安装

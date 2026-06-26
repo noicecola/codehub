@@ -81,7 +81,6 @@ class StreamParser {
 }
 
 module.exports = {
-  JSONLineParser,
   ClaudeParser,
   MimoParser,
   PlainTextParser,
