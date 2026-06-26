@@ -43,6 +43,16 @@ function renderToolSelector(tools) {
 
 function renderToolPanels(tools) {
   const panelsContainer = document.getElementById('tool-panels');
+  const toolIds = new Set(tools.map(t => t.id));
+
+  // 删除已移除工具的面板
+  panelsContainer.querySelectorAll('.tool-panel').forEach(panel => {
+    const panelToolId = panel.id.replace('panel-', '');
+    if (!toolIds.has(panelToolId)) {
+      panel.remove();
+    }
+  });
+
   tools.forEach(tool => {
     let panel = document.getElementById(`panel-${tool.id}`);
     if (!panel) {
@@ -148,6 +158,7 @@ async function showToolsModal() {
     item.querySelector('.edit-btn')?.addEventListener('click', () => editTool(tool));
     item.querySelector('.delete-btn')?.addEventListener('click', async () => {
       await window.codehub.removeCustomTool(tool.id);
+      state.selectedTools.delete(tool.id);
       showToolsModal();
       await refreshToolSelector();
     });
