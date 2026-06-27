@@ -9,7 +9,7 @@ const ADAPTERS = [
     builtin: true,
     command: 'claude',
     args: ['--print', '--verbose', '--output-format', 'stream-json'],
-    messageAsArg: false,
+    messageAsArg: true,
     parser: 'claude',
     prepareArgs: (workDir) => workDir
       ? ['--print', '--verbose', '--output-format', 'stream-json', '--add-dir', workDir]

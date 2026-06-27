@@ -50,7 +50,8 @@ class ToolAdapter {
     };
 
     if (this._prepareArgs) {
-      this._prepareArgs(workDir);
+      const newArgs = this._prepareArgs(workDir);
+      if (newArgs) this.transport.args = newArgs;
     }
 
     const result = await this.transport.send(message, sendOptions);
