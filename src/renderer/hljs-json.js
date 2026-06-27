@@ -1,8 +1,8 @@
-/**
- * Minified by jsDelivr using Terser v5.39.0.
- * Original file: /npm/highlight.js@11.11.1/lib/languages/json.js
- *
- * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
- */
-function json(e){const n=["true","false","null"],a={scope:"literal",beginKeywords:n.join(" ")};return{name:"JSON",aliases:["jsonc"],keywords:{literal:n},contains:[{className:"attr",begin:/"(\\.|[^\\"\r\n])*"(?=\s*:)/,relevance:1.01},{match:/[{}[\],:]/,className:"punctuation",relevance:0},e.QUOTE_STRING_MODE,a,e.C_NUMBER_MODE,e.C_LINE_COMMENT_MODE,e.C_BLOCK_COMMENT_MODE],illegal:"\\S"}}module.exports=json;
-//# sourceMappingURL=/sm/eb0d480cde90be53ecc98660ce05d497a191dcd9aa3997bf64c8b81ec6bb4203.map
+/*! `json` grammar compiled for Highlight.js 11.11.1 */
+(()=>{var e=(()=>{"use strict";return e=>{const a=["true","false","null"],s={
+scope:"literal",beginKeywords:a.join(" ")};return{name:"JSON",aliases:["jsonc"],
+keywords:{literal:a},contains:[{className:"attr",
+begin:/"(\\.|[^\\"\r\n])*"(?=\s*:)/,relevance:1.01},{match:/[{}[\],:]/,
+className:"punctuation",relevance:0
+},e.QUOTE_STRING_MODE,s,e.C_NUMBER_MODE,e.C_LINE_COMMENT_MODE,e.C_BLOCK_COMMENT_MODE],
+illegal:"\\S"}}})();hljs.registerLanguage("json",e)})();

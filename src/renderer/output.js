@@ -73,9 +73,9 @@ function showToolPanels() {
     .filter(p => state.selectedTools.has(p.id.replace('panel-', '')));
 
   const masonry = visiblePanels.length > 4;
+  const cols = masonry ? 2 : (visiblePanels.length <= 2 ? visiblePanels.length : (visiblePanels.length === 3 ? 3 : 2));
 
   if (masonry) {
-    const cols = 2;
     const rows = Math.ceil(visiblePanels.length / cols);
     const rowHeight = 330;
     container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
@@ -86,7 +86,6 @@ function showToolPanels() {
     track.classList.add('active');
     initScrollbar();
   } else {
-    const cols = visiblePanels.length <= 2 ? visiblePanels.length : (visiblePanels.length === 3 ? 3 : 2);
     const rows = Math.ceil(visiblePanels.length / cols);
     container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
