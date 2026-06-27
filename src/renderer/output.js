@@ -205,13 +205,14 @@ function finalizeOutput(toolId, content, isError) {
   } else {
     reply.dataset.done = 'true';
     const body = reply.querySelector('.reply-body');
+    const finalContent = content || (body ? body.textContent : '') || '(无输出)';
     if (isError) {
       reply.classList.add('panel-reply-error');
-      if (body) body.innerHTML = formatError(content || reply.textContent || '(无输出)');
-      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${formatError(content || '(无输出)')}</span>`;
-    } else if (content) {
-      if (body) body.innerHTML = renderMarkdown(content);
-      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(content)}</span>`;
+      if (body) body.innerHTML = formatError(finalContent);
+      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${formatError(finalContent)}</span>`;
+    } else {
+      if (body) body.innerHTML = renderMarkdown(finalContent);
+      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(finalContent)}</span>`;
     }
   }
   scrollPanel(toolId);
