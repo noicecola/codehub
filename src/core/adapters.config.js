@@ -8,12 +8,12 @@ const ADAPTERS = [
     name: 'Claude Code',
     builtin: true,
     command: 'claude',
-    args: ['--print', '--verbose', '--output-format', 'stream-json'],
-    messageAsArg: true,
+    args: ['--print', '--output-format', 'json'],
+    messageAsArg: false,
     parser: 'claude',
     prepareArgs: (workDir) => workDir
-      ? ['--print', '--verbose', '--output-format', 'stream-json', '--add-dir', workDir]
-      : ['--print', '--verbose', '--output-format', 'stream-json'],
+      ? ['--print', '--output-format', 'json', '--add-dir', workDir]
+      : ['--print', '--output-format', 'json'],
   },
   {
     id: 'mimo-code',

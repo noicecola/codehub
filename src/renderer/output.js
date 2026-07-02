@@ -151,7 +151,13 @@ function appendUserMessage(content) {
     }
     const msgDiv = document.createElement('div');
     msgDiv.className = 'panel-user-msg';
-    msgDiv.innerHTML = `<span class="msg-text">${esc(content)}</span><span class="msg-avatar user-avatar">👤</span>`;
+    msgDiv.innerHTML = `<span class="msg-text">${esc(content)}</span><span class="msg-avatar user-avatar">👤</span><button class="copy-msg-btn" title="复制">📋</button>`;
+    msgDiv.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(content);
+      e.target.textContent = '✓';
+      setTimeout(() => e.target.textContent = '📋', 1500);
+    });
     panel.appendChild(msgDiv);
   });
   scrollAllPanels();
@@ -164,7 +170,14 @@ function appendToOutput(toolId, text) {
   if (!reply || reply.dataset.done === 'true') {
     reply = document.createElement('div');
     reply.className = 'panel-reply';
-    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span>`;
+    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span><button class="copy-msg-btn" title="复制">📋</button>`;
+    reply.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const body = reply.querySelector('.reply-body');
+      navigator.clipboard.writeText(body ? body.textContent : reply.textContent);
+      e.target.textContent = '✓';
+      setTimeout(() => e.target.textContent = '📋', 1500);
+    });
     panel.appendChild(reply);
   }
   const body = reply.querySelector('.reply-body');
@@ -180,7 +193,14 @@ function finalizeOutput(toolId, content, isError) {
   if (!reply) {
     reply = document.createElement('div');
     reply.className = 'panel-reply';
-    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span>`;
+    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span><button class="copy-msg-btn" title="复制">📋</button>`;
+    reply.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const body = reply.querySelector('.reply-body');
+      navigator.clipboard.writeText(body ? body.textContent : reply.textContent);
+      e.target.textContent = '✓';
+      setTimeout(() => e.target.textContent = '📋', 1500);
+    });
     const body = reply.querySelector('.reply-body');
     if (isError) {
       reply.classList.add('panel-reply-error');

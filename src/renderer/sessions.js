@@ -101,7 +101,13 @@ function renderSessionHistory(session) {
     session.messages.forEach(msg => {
       const userDiv = document.createElement('div');
       userDiv.className = 'panel-user-msg';
-      userDiv.innerHTML = `<span class="msg-text">${esc(msg.content)}</span><span class="msg-avatar user-avatar">👤</span>`;
+      userDiv.innerHTML = `<span class="msg-text">${esc(msg.content)}</span><span class="msg-avatar user-avatar">👤</span><button class="copy-msg-btn" title="复制">📋</button>`;
+      userDiv.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(msg.content);
+        e.target.textContent = '✓';
+        setTimeout(() => e.target.textContent = '📋', 1500);
+      });
       panel.appendChild(userDiv);
 
       if (msg.toolOutputs && msg.toolOutputs[toolId]) {
@@ -109,12 +115,19 @@ function renderSessionHistory(session) {
           const replyDiv = document.createElement('div');
           replyDiv.className = 'panel-reply';
           replyDiv.dataset.done = 'true';
+          const rawText = output.error || output.content || '(无输出)';
           if (output.error) {
             replyDiv.classList.add('panel-reply-error');
-            replyDiv.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${esc(output.error)}</span>`;
+            replyDiv.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${esc(output.error)}</span><button class="copy-msg-btn" title="复制">📋</button>`;
           } else {
-            replyDiv.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(output.content || '(无输出)')}</span>`;
+            replyDiv.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(output.content || '(无输出)')}</span><button class="copy-msg-btn" title="复制">📋</button>`;
           }
+          replyDiv.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(rawText);
+            e.target.textContent = '✓';
+            setTimeout(() => e.target.textContent = '📋', 1500);
+          });
           panel.appendChild(replyDiv);
         }
     });

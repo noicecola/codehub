@@ -243,6 +243,26 @@
   margin-top: 0;
 }
 
+.copy-msg-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.panel-user-msg:hover .copy-msg-btn,
+.panel-reply:hover .copy-msg-btn {
+  opacity: 0.6;
+}
+.copy-msg-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255,255,255,0.1);
+}
+
 .msg-avatar {
   display: inline-flex;
   align-items: center;

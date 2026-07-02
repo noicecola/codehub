@@ -58,34 +58,52 @@ ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir })
 
     const snapshotPromise = targetDir ? fileTracker.snapshot(toolId, targetDir) : Promise.resolve();
     const startTime = Date.now();
+    const MAX_RETRIES = 1; // 超时自动重试1次
 
-    try {
-      const result = await Promise.race([
-        adapter.run(content, workDir || targetDir, (chunk) => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('stream-chunk', { toolId, chunk });
-          }
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)),
-      ]);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      let timeoutId;
+      try {
+        if (attempt > 0) log(`${toolId} retry #${attempt}`);
+        const result = await Promise.race([
+          adapter.run(content, workDir || targetDir, (chunk) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('stream-chunk', { toolId, chunk });
+            }
+          }),
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
+          }),
+        ]);
 
-      const elapsed = Date.now() - startTime;
-      log(`${toolId} done, code=${result.exitCode}, ${elapsed}ms`);
-      result.elapsed = elapsed;
-      results[toolId] = result;
+        clearTimeout(timeoutId);
+        const elapsed = Date.now() - startTime;
+        log(`${toolId} done, code=${result.exitCode}, ${elapsed}ms`);
+        result.elapsed = elapsed;
+        results[toolId] = result;
 
-      await snapshotPromise;
-      artifacts[toolId] = await fileTracker.diff(toolId, targetDir);
+        await snapshotPromise;
+        artifacts[toolId] = await fileTracker.diff(toolId, targetDir);
 
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('tool-done', { toolId, result: { ...result }, artifacts: artifacts[toolId] || [] });
-      }
-    } catch (err) {
-      const elapsed = Date.now() - startTime;
-      log(`${toolId} error: ${err.message} (${elapsed}ms)`);
-      results[toolId] = { error: err.message, elapsed };
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('tool-done', { toolId, result: { error: err.message, elapsed }, artifacts: [] });
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('tool-done', { toolId, result: { ...result }, artifacts: artifacts[toolId] || [] });
+        }
+        return; // 成功，退出重试循环
+      } catch (err) {
+        clearTimeout(timeoutId);
+        adapter.stop();
+        const elapsed = Date.now() - startTime;
+        log(`${toolId} error: ${err.message} (${elapsed}ms), attempt=${attempt}`);
+
+        if (attempt < MAX_RETRIES && err.message === 'timeout') {
+          log(`${toolId} will retry in 2s...`);
+          await new Promise(r => setTimeout(r, 2000));
+          continue; // 重试
+        }
+
+        results[toolId] = { error: err.message, elapsed };
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('tool-done', { toolId, result: { error: err.message, elapsed }, artifacts: [] });
+        }
       }
     }
   });
@@ -108,6 +126,7 @@ ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
   const adapter = registry.get(toolId);
   if (!adapter) return { error: `Unknown tool: ${toolId}` };
   const targetDir = workDir || __dirname;
+  let timeoutId;
   try {
     const result = await Promise.race([
       adapter.run(content, workDir || targetDir, (chunk) => {
@@ -115,13 +134,18 @@ ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
           mainWindow.webContents.send('stream-chunk', { toolId, chunk });
         }
       }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5 * 60 * 1000)),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('timeout')), 5 * 60 * 1000);
+      }),
     ]);
+    clearTimeout(timeoutId);
     if (currentSessionId) {
       sessionManager.updateToolOutput(currentSessionId, toolId, result);
     }
     return result;
   } catch (err) {
+    clearTimeout(timeoutId);
+    adapter.stop();
     return { error: err.message };
   }
 });

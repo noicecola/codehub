@@ -73,6 +73,7 @@ function setupEventListeners() {
 
   window.codehub.onStreamChunk(({ toolId, chunk }) => appendToOutput(toolId, chunk));
   window.codehub.onToolDone(({ toolId, result, artifacts }) => {
+    console.log('[DEBUG] tool-done', toolId, 'elapsed:', result.elapsed, 'content len:', (result.content||'').length);
     finalizeOutput(toolId, result.content || result.error, !!result.error);
     updatePanelStatus(toolId, result.error ? 'error' : 'completed');
     if (result.elapsed) showToolStats(toolId, result);

@@ -20,12 +20,17 @@ class JSONLineParser {
 // Claude Code JSON解析器
 class ClaudeParser extends JSONLineParser {
   extract(obj) {
+    // 支持 stream-json 格式
     if (obj.type === 'assistant' && obj.message?.content) {
       for (const block of obj.message.content) {
         if (block.type === 'text' && block.text) {
           return block.text;
         }
       }
+    }
+    // 支持 json 格式（单次返回）
+    if (obj.type === 'result' && obj.result) {
+      return obj.result;
     }
     return null;
   }
