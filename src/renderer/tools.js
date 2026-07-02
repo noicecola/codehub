@@ -60,7 +60,7 @@ function renderToolPanels(tools) {
       panel = document.createElement('div');
       panel.className = 'tool-panel';
       panel.id = `panel-${tool.id}`;
-      panel.draggable = true;
+      panel.draggable = false;
       panel.dataset.toolId = tool.id;
       panel.innerHTML = `
         <div class="tool-panel-header">
@@ -71,12 +71,15 @@ function renderToolPanels(tools) {
         </div>
         <div class="tool-panel-content" id="panel-content-${tool.id}"></div>`;
       panel.querySelector('.panel-retry-btn').addEventListener('click', () => retryTool(tool.id));
+      // 拖拽：只在拖拽手柄上触发
+      const handle = panel.querySelector('.tool-panel-drag-handle');
+      handle.addEventListener('mousedown', () => { panel.draggable = true; });
       panel.addEventListener('dragstart', handleDragStart);
       panel.addEventListener('dragover', handleDragOver);
       panel.addEventListener('dragenter', handleDragEnter);
       panel.addEventListener('dragleave', handleDragLeave);
       panel.addEventListener('drop', handleDrop);
-      panel.addEventListener('dragend', handleDragEnd);
+      panel.addEventListener('dragend', (e) => { panel.draggable = false; handleDragEnd(e); });
       panelsContainer.appendChild(panel);
     }
     panel.style.display = state.selectedTools.has(tool.id) ? '' : 'none';
