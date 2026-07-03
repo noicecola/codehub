@@ -1,12 +1,12 @@
 // === IPC Handler 层 ===
 // 所有 ipcMain.handle 注册，按功能分组
 
-const { dialog } = require('electron');
+const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
 
-function registerHandlers({ registry, router, sessionManager, fileTracker, getMainWindow, getCurrentSessionId, setCurrentSessionId }) {
+function registerHandlers({ registry, router, sessionManager, fileTracker, getMainWindow, getCurrentSessionId, setCurrentSessionId, log }) {
 
   const TIMEOUT_MS = 5 * 60 * 1000;
 

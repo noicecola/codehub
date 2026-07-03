@@ -55,6 +55,7 @@ app.whenReady().then(() => {
     getMainWindow: () => mainWindow,
     getCurrentSessionId: () => currentSessionId,
     setCurrentSessionId: (id) => { currentSessionId = id; },
+    log,
   });
 
   log('App ready');
