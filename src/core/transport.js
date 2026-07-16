@@ -53,11 +53,34 @@ class CLITransport {
       });
 
       // 通过 stdin 传递消息（非 messageAsArg 模式时）
-      if (!this.messageAsArg && message) {
-        this.process.stdin.write(message + '\n');
+      // 三重防护：检查 writable + try-catch + error 事件
+      const stdin = this.process.stdin;
+      stdin.on('error', (err) => {
+        // EPIPE: 子进程已关闭 stdin，静默忽略
+        if (err.code !== 'EPIPE') {
+          console.error(`stdin error for ${this.command}:`, err.message);
+        }
+      });
+
+      try {
+        if (!this.messageAsArg && message && stdin.writable) {
+          stdin.write(message + '\n');
+        }
+      } catch (err) {
+        if (err.code !== 'EPIPE') {
+          console.error(`stdin write error for ${this.command}:`, err.message);
+        }
       }
-      // 始终关闭 stdin，防止子进程等待输入而挂起
-      this.process.stdin.end();
+
+      try {
+        if (stdin.writable) {
+          stdin.end();
+        }
+      } catch (err) {
+        if (err.code !== 'EPIPE') {
+          console.error(`stdin end error for ${this.command}:`, err.message);
+        }
+      }
     });
   }
 

@@ -76,6 +76,7 @@ function setupEventListeners() {
     console.log('[DEBUG] tool-done', toolId, 'elapsed:', result.elapsed, 'content len:', (result.content||'').length);
     finalizeOutput(toolId, result.content || result.error, !!result.error);
     updatePanelStatus(toolId, result.error ? 'error' : 'completed');
+    // Note: finalizeOutput already cleans up _streamingState[toolId]
     if (result.elapsed) showToolStats(toolId, result);
     if (artifacts?.length) {
       state.lastArtifacts[toolId] = artifacts;
@@ -93,3 +94,29 @@ function setupEventListeners() {
 }
 
 init();
+
+// === 快速开始卡片 ===
+document.querySelectorAll('.quick-start-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const action = card.dataset.action;
+    if (action === 'new-session') document.getElementById('new-session-btn')?.click();
+    else if (action === 'load-template') document.getElementById('template-btn')?.click();
+    else if (action === 'manage-tools') document.getElementById('manage-tools-btn')?.click();
+  });
+});
+
+// === 键盘快捷键：/ 聚焦搜索 ===
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+    const search = document.getElementById('session-search');
+    const input = document.getElementById('message-input');
+    if (document.activeElement !== search && document.activeElement !== input) {
+      e.preventDefault();
+      search?.focus();
+    }
+  }
+});
+
+// === Welcome 页初始化 ===
+if (typeof renderToolStatusBar === 'function') renderToolStatusBar();
+if (typeof renderPresetBar === 'function') renderPresetBar();

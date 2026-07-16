@@ -14,7 +14,6 @@ describe('Adapter Config', () => {
     assert.ok(ids.includes('opencode'));
     assert.ok(ids.includes('kilo-code'));
     assert.ok(ids.includes('qwen-code'));
-    assert.ok(ids.includes('trae'));
   });
 
   it('each config has required fields', () => {

@@ -22,10 +22,27 @@ function renderToolSelector(tools) {
     dot.className = `tool-status ${tool.available ? 'selected' : ''}`;
     dot.id = `status-${tool.id}`;
     const txt = document.createElement('span');
-    txt.textContent = tool.available ? tool.name : `${tool.name} (未安装)`;
+    txt.textContent = tool.name;
+
     const toolLabel = document.createElement('span');
     toolLabel.className = 'tool-label';
     toolLabel.append(dot, txt);
+
+    // 未安装时显示安装按钮
+    if (!tool.available && tool.installCommand) {
+      const installBtn = document.createElement('button');
+      installBtn.className = 'tool-install-btn';
+      installBtn.id = `install-btn-${tool.id}`;
+      installBtn.textContent = '安装';
+      installBtn.title = `安装命令: ${tool.installCommand}`;
+      installBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        installToolById(tool.id);
+      });
+      toolLabel.appendChild(installBtn);
+    }
+
     label.append(cb, toolLabel);
     container.appendChild(label);
   });
@@ -64,10 +81,15 @@ function renderToolPanels(tools) {
       panel.dataset.toolId = tool.id;
       panel.innerHTML = `
         <div class="tool-panel-header">
-          <span class="tool-panel-drag-handle">⠿</span>
-          <span class="tool-panel-name">${esc(tool.name)}</span>
-          <span class="tool-panel-status" id="panel-status-${tool.id}">就绪</span>
-          <button class="panel-retry-btn hidden" id="panel-retry-${tool.id}" title="重试">↻</button>
+          <div class="tool-panel-header-left">
+            <span class="tool-panel-drag-handle">⠿</span>
+            <span class="tool-panel-name">${esc(tool.name)}</span>
+          </div>
+          <div class="tool-panel-header-right">
+            <span class="tool-panel-timer" id="panel-timer-${tool.id}" style="display:none">0.0s</span>
+            <span class="tool-panel-status" id="panel-status-${tool.id}">就绪</span>
+            <button class="panel-retry-btn hidden" id="panel-retry-${tool.id}" title="重试">↻</button>
+          </div>
         </div>
         <div class="tool-panel-content" id="panel-content-${tool.id}"></div>`;
       panel.querySelector('.panel-retry-btn').addEventListener('click', () => retryTool(tool.id));
@@ -124,6 +146,7 @@ function handleDrop(e) {
     } else {
       container.insertBefore(dragSrcEl, this);
     }
+    syncToolSelectorOrder();
   }
   this.classList.remove('drag-over');
 }
@@ -134,9 +157,29 @@ function handleDragEnd() {
   });
 }
 
+function syncToolSelectorOrder() {
+  const panels = document.getElementById('tool-panels');
+  const selector = document.getElementById('tool-selector');
+  if (!panels || !selector) return;
+
+  const panelOrder = Array.from(panels.children).map(p => p.dataset.toolId);
+  const checkboxes = Array.from(selector.querySelectorAll('.tool-checkbox'));
+  const addBtn = selector.querySelector('.tool-add-btn');
+
+  panelOrder.forEach(toolId => {
+    const cb = checkboxes.find(c => {
+      const statusDot = c.querySelector('.tool-status');
+      return statusDot && statusDot.id === `status-${toolId}`;
+    });
+    if (cb) selector.insertBefore(cb, addBtn);
+  });
+}
+
 function updateSelectedInfo() {
-  document.getElementById('selected-tools-info').textContent =
-    state.selectedTools.size === 0 ? '未选择工具' : `已选择 ${state.selectedTools.size} 个工具`;
+  const badge = document.getElementById('tools-count-badge');
+  if (badge) {
+    badge.textContent = state.selectedTools.size === 0 ? '0 个工具' : `${state.selectedTools.size} 个工具`;
+  }
 }
 
 function updateSendButton() {
@@ -145,20 +188,71 @@ function updateSendButton() {
 
 async function showToolsModal() {
   const tools = await window.codehub.getTools();
+  const versions = await window.codehub.getToolVersions();
   const list = document.getElementById('tools-list');
   list.innerHTML = '';
+
+  // 批量安装按钮
+  const installable = tools.filter(t => !t.available && t.installCommand);
+  if (installable.length > 0) {
+    const batchBtn = document.createElement('button');
+    batchBtn.className = 'tool-install-btn';
+    batchBtn.style.cssText = 'width: 100%; margin-bottom: 8px; padding: 6px;';
+    batchBtn.textContent = `一键安装全部 (${installable.length})`;
+    batchBtn.addEventListener('click', async () => {
+      batchBtn.disabled = true;
+      batchBtn.textContent = '安装中...';
+      const toolIds = installable.map(t => t.id);
+      const results = await window.codehub.batchInstall(toolIds);
+      const successCount = Object.values(results).filter(r => r.success).length;
+      const failCount = Object.values(results).filter(r => !r.success).length;
+      toast.success(`批量安装完成：${successCount} 成功，${failCount} 失败`);
+      await refreshToolSelector();
+      showToolsModal();
+    });
+    list.appendChild(batchBtn);
+  }
+
   tools.forEach(tool => {
     const item = document.createElement('div');
     item.className = 'list-item';
+    const version = versions[tool.id];
+    const versionStr = tool.available ? (version ? `v${version}` : '已安装') : '未安装';
+    const installBtnHtml = !tool.available && tool.installCommand
+      ? `<button class="tool-install-btn" data-install="${tool.id}" title="安装命令: ${tool.installCommand}">安装</button>`
+      : '';
     item.innerHTML = `
       <div class="item-info">
         <div class="item-name">${esc(tool.name)}</div>
-        <div class="item-detail">${tool.builtin ? '内置' : '自定义'} · ${tool.available ? '可用' : '未安装'}</div>
+        <div class="item-detail">${tool.builtin ? '内置' : '自定义'} · ${versionStr}</div>
       </div>
       <div class="item-actions">
+        ${installBtnHtml}
         ${!tool.builtin ? `<button class="edit-btn" data-id="${tool.id}" title="编辑">✎</button>` : ''}
         ${!tool.builtin ? `<button class="delete-btn" data-id="${tool.id}">&times;</button>` : ''}
       </div>`;
+    item.querySelector('.tool-install-btn')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = '安装中...';
+      try {
+        const result = await window.codehub.installTool(tool.id);
+        if (result.success) {
+          toast.success(`${tool.name} 安装成功！`);
+          await refreshToolSelector();
+          showToolsModal();
+        } else {
+          toast.error(`安装失败: ${result.error}`);
+          btn.disabled = false;
+          btn.textContent = '安装';
+        }
+      } catch (err) {
+        toast.error(`安装出错: ${err.message}`);
+        btn.disabled = false;
+        btn.textContent = '安装';
+      }
+    });
     item.querySelector('.edit-btn')?.addEventListener('click', () => editTool(tool));
     item.querySelector('.delete-btn')?.addEventListener('click', async () => {
       await window.codehub.removeCustomTool(tool.id);
@@ -312,4 +406,107 @@ async function saveCurrentAsPreset() {
   await window.codehub.savePreset({ name, toolIds: Array.from(state.selectedTools) });
   toast.success(`已保存预设: ${name}`);
   modalManager.closeById('presets-modal');
+}
+
+// === 一键安装 ===
+
+async function installToolById(toolId) {
+  const btn = document.getElementById(`install-btn-${toolId}`);
+  if (!btn) return;
+
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '安装中...';
+  btn.classList.add('installing');
+
+  try {
+    const result = await window.codehub.installTool(toolId);
+    if (result.success) {
+      toast.success('安装成功！工具已可用。');
+      await refreshToolSelector();
+    } else {
+      toast.error(`安装失败: ${result.error}`);
+      btn.disabled = false;
+      btn.textContent = originalText;
+      btn.classList.remove('installing');
+    }
+  } catch (err) {
+    toast.error(`安装出错: ${err.message}`);
+    btn.disabled = false;
+    btn.textContent = originalText;
+    btn.classList.remove('installing');
+  }
+}
+
+// 安装进度监听
+if (window.codehub.onInstallProgress) {
+  window.codehub.onInstallProgress(({ toolId, status, message }) => {
+    const btn = document.getElementById(`install-btn-${toolId}`);
+    if (!btn) return;
+
+    if (status === 'installing') {
+      btn.textContent = '安装中...';
+      btn.title = message;
+    } else if (status === 'completed') {
+      toast.success('安装完成！');
+    } else if (status === 'error') {
+      toast.error(`安装失败: ${message}`);
+      btn.disabled = false;
+      btn.textContent = '安装';
+      btn.classList.remove('installing');
+    }
+  });
+}
+
+// === 工具计数徽章 ===
+function updateToolsCount() {
+  const badge = document.getElementById('tools-count-badge');
+  const selected = document.querySelectorAll('.tool-checkbox.selected');
+  if (badge) badge.textContent = `${selected.length} 个工具`;
+}
+
+(function initToolsCount() {
+  const selector = document.getElementById('tool-selector');
+  if (!selector) return;
+  const observer = new MutationObserver(updateToolsCount);
+  observer.observe(selector, { childList: true, subtree: true, attributes: true });
+  updateToolsCount();
+})();
+
+// === 工具状态栏（Welcome 页） ===
+function renderToolStatusBar() {
+  const container = document.getElementById('tool-status-bar');
+  if (!container) return;
+  const tools = window.CodeHubState?.tools || [];
+  container.innerHTML = tools.slice(0, 5).map(tool => `
+    <div class="tool-status-item">
+      <div class="tool-status-dot ${tool.available ? 'online' : 'offline'}"></div>
+      <span>${tool.name}</span>
+    </div>
+  `).join('');
+}
+
+// === 预设快捷栏 ===
+function renderPresetBar() {
+  const container = document.getElementById('preset-bar');
+  if (!container) return;
+  const presets = window.CodeHubState?.presets || [];
+  if (presets.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  container.innerHTML = presets.slice(0, 4).map(preset => `
+    <button class="preset-btn" data-preset-id="${preset.id}">
+      <span class="preset-icon">⚡</span>${preset.name}
+    </button>
+  `).join('');
+  const messageInput = document.getElementById('message-input');
+  container.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = presets.find(p => p.id === btn.dataset.presetId);
+      if (preset && messageInput) {
+        messageInput.value = preset.message || '';
+        messageInput.dispatchEvent(new Event('input'));
+        messageInput.focus();
+      }
+    });
+  });
 }

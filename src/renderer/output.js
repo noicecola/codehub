@@ -151,7 +151,7 @@ function appendUserMessage(content) {
     }
     const msgDiv = document.createElement('div');
     msgDiv.className = 'panel-user-msg';
-    msgDiv.innerHTML = `<span class="msg-text">${esc(content)}</span><span class="msg-avatar user-avatar">👤</span><button class="copy-msg-btn" title="复制">📋</button>`;
+    msgDiv.innerHTML = `<span class="msg-avatar user-avatar">👤</span><span class="msg-text">${esc(content)}</span><button class="copy-msg-btn" title="复制">📋</button>`;
     msgDiv.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       navigator.clipboard.writeText(content);
@@ -166,8 +166,14 @@ function appendUserMessage(content) {
 function appendToOutput(toolId, text) {
   const panel = document.getElementById(`panel-content-${toolId}`);
   if (!panel) return;
+
   let reply = panel.querySelector('.panel-reply:last-child');
-  if (!reply || reply.dataset.done === 'true') {
+
+  // Guard: if the last reply is finalized (done), it means tool-done fired
+  // before all stream-chunks arrived (race condition). Do NOT create a new
+  // reply — append to the existing one to keep content together.
+  // Only create a new reply when there's no previous reply at all.
+  if (!reply) {
     reply = document.createElement('div');
     reply.className = 'panel-reply';
     reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span><button class="copy-msg-btn" title="复制">📋</button>`;
@@ -180,6 +186,10 @@ function appendToOutput(toolId, text) {
     });
     panel.appendChild(reply);
   }
+
+  // Mark this tool as actively streaming (after finding/creating the reply)
+  state.streaming[toolId] = true;
+
   const body = reply.querySelector('.reply-body');
   if (body) body.textContent += text;
   else reply.textContent += text;
@@ -187,6 +197,9 @@ function appendToOutput(toolId, text) {
 }
 
 function finalizeOutput(toolId, content, isError) {
+  // Clear streaming state for this tool
+  delete state.streaming[toolId];
+
   const panel = document.getElementById(`panel-content-${toolId}`);
   if (!panel) return;
   let reply = panel.querySelector('.panel-reply:last-child');
@@ -307,4 +320,43 @@ function clearOutput() {
   document.getElementById('welcome-screen').classList.remove('hidden');
   document.getElementById('panels-wrapper').classList.add('hidden');
   document.querySelectorAll('.tool-panel-content').forEach(el => el.innerHTML = '');
+}
+
+// === 运行计时器 ===
+const panelTimers = {};
+
+function startTimer(toolId) {
+  if (panelTimers[toolId]) clearInterval(panelTimers[toolId].interval);
+  const startTime = Date.now();
+  const timerEl = document.getElementById(`panel-timer-${toolId}`);
+  panelTimers[toolId] = { startTime, interval: null };
+  if (timerEl) {
+    timerEl.style.display = '';
+    updateTimerDisplay(toolId);
+    panelTimers[toolId].interval = setInterval(() => updateTimerDisplay(toolId), 100);
+  }
+}
+
+function stopTimer(toolId) {
+  if (panelTimers[toolId]) {
+    clearInterval(panelTimers[toolId].interval);
+    delete panelTimers[toolId];
+  }
+}
+
+function updateTimerDisplay(toolId) {
+  const timer = panelTimers[toolId];
+  const timerEl = document.getElementById(`panel-timer-${toolId}`);
+  if (!timer || !timerEl) return;
+  timerEl.textContent = `${((Date.now() - timer.startTime) / 1000).toFixed(1)}s`;
+}
+
+// Hook: updatePanelStatus 时自动启停计时器
+const _origUpdatePanelStatus = window.updatePanelStatus;
+if (_origUpdatePanelStatus) {
+  window.updatePanelStatus = function(toolId, status) {
+    _origUpdatePanelStatus(toolId, status);
+    if (status === 'running') startTimer(toolId);
+    else stopTimer(toolId);
+  };
 }

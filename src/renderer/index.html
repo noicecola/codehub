@@ -22,11 +22,16 @@
       <div class="sidebar-search">
         <input id="session-search" type="text" placeholder="搜索会话..." />
       </div>
+      <div class="session-filters">
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="running">进行中</button>
+        <button class="filter-btn" data-filter="completed">已完成</button>
+      </div>
       <div id="session-list"></div>
       <div class="sidebar-footer">
-        <button id="manage-tools-btn" class="sidebar-tool-btn">⚙️ 工具</button>
-        <button id="manage-presets-btn" class="sidebar-tool-btn">📋 预设</button>
-        <button id="manage-templates-btn" class="sidebar-tool-btn">📝 模板</button>
+        <button id="manage-tools-btn" class="sidebar-tool-btn"><span class="btn-icon">⚙️</span> 工具</button>
+        <button id="manage-presets-btn" class="sidebar-tool-btn"><span class="btn-icon">📋</span> 预设</button>
+        <button id="manage-templates-btn" class="sidebar-tool-btn"><span class="btn-icon">📝</span> 模板</button>
       </div>
     </aside>
 
@@ -36,27 +41,52 @@
           <div id="template-dropdown" class="dropdown hidden">
             <div id="template-list"></div>
           </div>
-          <button id="template-btn" class="tool-btn" title="消息模板">📝</button>
-          <button id="artifacts-btn" class="tool-btn" title="产物" style="display:none">📦</button>
+          <button id="template-btn" class="tool-btn" title="消息模板"><span class="btn-icon">📝</span></button>
+          <button id="artifacts-btn" class="tool-btn" title="产物" style="display:none"><span class="btn-icon">📦</span></button>
           <button id="compare-btn" class="tool-btn" title="对比">对比</button>
-          <button id="edit-tags-btn" class="tool-btn" title="标签">🏷️</button>
-          <button id="export-btn" class="tool-btn" title="导出">💾</button>
+          <button id="edit-tags-btn" class="tool-btn" title="标签"><span class="btn-icon">🏷️</span></button>
+          <button id="export-btn" class="tool-btn" title="导出"><span class="btn-icon">💾</span></button>
           <select id="work-dir-select"><option value="">目录</option></select>
-          <button id="browse-dir-btn" class="tool-btn" title="选择目录">📁</button>
+          <button id="browse-dir-btn" class="tool-btn" title="选择目录"><span class="btn-icon">📁</span></button>
         </div>
       </header>
 
       <main id="output-panel">
         <div id="welcome-screen">
+          <div class="welcome-logo">C</div>
           <h2>CodeHub</h2>
-          <p>多工具消息分发桌面端</p>
-          <p class="hint">选择工具 → 输入消息 → 同时发送给多个coding工具</p>
+          <p class="subtitle">多工具消息分发桌面端</p>
+          <p class="hint">选择工具 → 输入消息 → 同时发送给多个 AI 编码工具，并行执行对比结果</p>
+          
+          <div class="quick-start-cards">
+            <div class="quick-start-card" data-action="new-session">
+              <div class="card-icon">✨</div>
+              <div class="card-title">新建会话</div>
+              <div class="card-desc">开始新的对话</div>
+            </div>
+            <div class="quick-start-card" data-action="load-template">
+              <div class="card-icon">📝</div>
+              <div class="card-title">使用模板</div>
+              <div class="card-desc">快速填充消息</div>
+            </div>
+            <div class="quick-start-card" data-action="manage-tools">
+              <div class="card-icon">🔧</div>
+              <div class="card-title">管理工具</div>
+              <div class="card-desc">配置 AI 工具</div>
+            </div>
+          </div>
+
+          <div class="tool-status-bar" id="tool-status-bar">
+            <!-- Dynamic tool status items -->
+          </div>
+
           <div class="tips">
-            <span>Ctrl+Enter 发送</span>
-            <span>|</span>
+            <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 发送</span>
+            <span><kbd>/</kbd> 搜索</span>
             <span>左侧管理会话</span>
           </div>
         </div>
+
         <div id="panels-wrapper" class="panels-wrapper hidden">
           <div id="tool-panels" class="tool-panels"></div>
           <div id="scrollbar-track" class="scrollbar-track">
@@ -67,9 +97,17 @@
 
       <footer id="input-area">
         <div id="tool-selector"></div>
-        <textarea id="message-input" placeholder="输入消息... (Ctrl+Enter 发送)" rows="2"></textarea>
+        <div class="preset-bar" id="preset-bar">
+          <!-- Dynamic preset buttons -->
+        </div>
+        <div class="input-wrapper">
+          <textarea id="message-input" placeholder="输入消息... (Ctrl+Enter 发送)" rows="2"></textarea>
+          <span class="char-count" id="char-count">0</span>
+        </div>
         <div id="input-controls">
-          <div id="selected-tools-info"></div>
+          <div id="selected-tools-info">
+            <span class="tools-count-badge" id="tools-count-badge">0 个工具</span>
+          </div>
           <div id="input-buttons">
             <button id="send-btn" disabled>发送</button>
             <button id="stop-btn" style="display:none">停止</button>
@@ -125,5 +163,6 @@
   <script src="modals.js"></script>
   <script src="sessions.js"></script>
   <script src="app.js"></script>
+  <script src="enhancements.js"></script>
 </body>
 </html>

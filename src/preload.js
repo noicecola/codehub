@@ -5,6 +5,14 @@ contextBridge.exposeInMainWorld('codehub', {
   broadcastMessage: (data) => ipcRenderer.invoke('broadcast-message', data),
   stopTool: (toolId) => ipcRenderer.invoke('stop-tool', toolId),
   retryTool: (data) => ipcRenderer.invoke('retry-tool', data),
+
+  installTool: (toolId) => ipcRenderer.invoke('install-tool', { toolId }),
+  cancelInstall: (toolId) => ipcRenderer.invoke('cancel-install', { toolId }),
+  onInstallProgress: (cb) => ipcRenderer.on('install-progress', (e, data) => cb(data)),
+
+  getToolVersions: () => ipcRenderer.invoke('get-tool-versions'),
+  getInstallableTools: () => ipcRenderer.invoke('get-installable-tools'),
+  batchInstall: (toolIds) => ipcRenderer.invoke('batch-install', { toolIds }),
   onStreamChunk: (cb) => ipcRenderer.on('stream-chunk', (e, data) => cb(data)),
   onToolDone: (cb) => ipcRenderer.on('tool-done', (e, data) => cb(data)),
 

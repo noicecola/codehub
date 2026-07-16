@@ -5,14 +5,88 @@ const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
+const { spawn } = require('child_process');
 
 function registerHandlers({ registry, router, sessionManager, fileTracker, getMainWindow, getCurrentSessionId, setCurrentSessionId, log }) {
 
   const TIMEOUT_MS = 5 * 60 * 1000;
 
+  // 可重试的错误类型：超时、进程级异常（EPIPE/ENOENT 等）
+  // 不重试：非零退出码（正常业务行为）、用户取消
+  function isRetryableError(err) {
+    if (err.message === 'timeout') return true;
+    if (err.code === 'EPIPE' || err.code === 'ENOENT' || err.code === 'EACCES') return true;
+    if (err.message?.includes('spawn') || err.message?.includes('fork')) return true;
+    return false;
+  }
+
   // === 工具 ===
 
   ipcMain.handle('get-tools', () => registry.list());
+
+  ipcMain.handle('get-tool-versions', async () => {
+    try {
+      return await registry.getVersions();
+    } catch (err) {
+      log(`get-tool-versions error: ${err.message}`);
+      return {};
+    }
+  });
+
+  ipcMain.handle('get-installable-tools', () => registry.getInstallableTools());
+
+  ipcMain.handle('batch-install', async (event, { toolIds }) => {
+    const results = {};
+    const mainWindow = getMainWindow();
+
+    for (const toolId of toolIds) {
+      const info = registry.getInstallInfo(toolId);
+      if (!info || !info.installCommand) {
+        results[toolId] = { success: false, error: 'No install command' };
+        continue;
+      }
+      if (info.available) {
+        results[toolId] = { success: false, error: 'Already installed' };
+        continue;
+      }
+
+      try {
+        const result = await new Promise((resolve) => {
+          const { spawn } = require('child_process');
+          const proc = spawn('sh', ['-c', info.installCommand], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+
+          let stdout = '', stderr = '';
+          proc.stdout.on('data', (d) => { stdout += d.toString(); });
+          proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+          const timeout = setTimeout(() => {
+            proc.kill('SIGTERM');
+            resolve({ success: false, error: 'Timeout' });
+          }, 5 * 60 * 1000);
+
+          proc.on('close', (code) => {
+            clearTimeout(timeout);
+            if (code === 0) {
+              results[toolId] = { success: true };
+            } else {
+              results[toolId] = { success: false, error: stderr || stdout || `Exit code ${code}` };
+            }
+          });
+
+          proc.on('error', (err) => {
+            clearTimeout(timeout);
+            results[toolId] = { success: false, error: err.message };
+          });
+        });
+      } catch (err) {
+        results[toolId] = { success: false, error: err.message };
+      }
+    }
+
+    return results;
+  });
 
   ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir }) => {
     log(`broadcast: "${content.substring(0, 50)}" tools=${toolIds}`);
@@ -63,7 +137,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
           const elapsed = Date.now() - startTime;
           log(`${toolId} error: ${err.message} (${elapsed}ms), attempt=${attempt}`);
 
-          if (attempt < MAX_RETRIES && err.message === 'timeout') {
+          if (attempt < MAX_RETRIES && isRetryableError(err)) {
             log(`${toolId} will retry in 2s...`);
             await new Promise(r => setTimeout(r, 2000));
             continue;
@@ -91,6 +165,106 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
   });
 
   ipcMain.handle('stop-tool', (event, toolId) => router.stop(toolId));
+
+  // === 一键安装 ===
+
+  const installProcesses = new Map();
+
+  ipcMain.handle('install-tool', async (event, { toolId }) => {
+    const info = registry.getInstallInfo(toolId);
+    if (!info) return { success: false, error: `Unknown tool: ${toolId}` };
+    if (info.available) return { success: false, error: 'Tool is already installed' };
+    if (!info.installCommand) return { success: false, error: 'No install command configured' };
+
+    const mainWindow = getMainWindow();
+    const sendProgress = (data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('install-progress', { toolId, ...data });
+      }
+    };
+
+    // 防重复点击
+    if (installProcesses.has(toolId)) {
+      return { success: false, error: 'Installation already in progress' };
+    }
+
+    sendProgress({ status: 'installing', message: `Running: ${info.installCommand}` });
+
+    return new Promise((resolve) => {
+      const proc = spawn('sh', ['-c', info.installCommand], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, FORCE_COLOR: '0' },
+      });
+
+      installProcesses.set(toolId, proc);
+
+      let stdout = '';
+      let stderr = '';
+
+      proc.stdout.on('data', (data) => {
+        const text = data.toString();
+        stdout += text;
+        sendProgress({ status: 'installing', message: text.trim() });
+      });
+
+      proc.stderr.on('data', (data) => {
+        const text = data.toString();
+        stderr += text;
+        sendProgress({ status: 'installing', message: text.trim() });
+      });
+
+      // 超时保护：5 分钟
+      const timeout = setTimeout(() => {
+        proc.kill('SIGTERM');
+        installProcesses.delete(toolId);
+        sendProgress({ status: 'error', message: 'Installation timed out (5 min)' });
+        resolve({ success: false, error: 'Installation timed out' });
+      }, 5 * 60 * 1000);
+
+      proc.on('close', (code) => {
+        clearTimeout(timeout);
+        installProcesses.delete(toolId);
+
+        if (code === 0) {
+          // 安装后验证
+          const adapter = registry.get(toolId);
+          const verified = adapter ? adapter.isAvailable() : false;
+          if (verified) {
+            sendProgress({ status: 'completed', message: 'Installation successful' });
+            log(`install ${toolId} success`);
+            resolve({ success: true });
+          } else {
+            sendProgress({ status: 'error', message: 'Installed but command not found in PATH' });
+            log(`install ${toolId} completed but verification failed`);
+            resolve({ success: false, error: 'Installed but command not found in PATH. You may need to restart the terminal or add the tool to your PATH.' });
+          }
+        } else {
+          const errorMsg = stderr || stdout || `Process exited with code ${code}`;
+          sendProgress({ status: 'error', message: errorMsg });
+          log(`install ${toolId} failed: code=${code}`);
+          resolve({ success: false, error: errorMsg });
+        }
+      });
+
+      proc.on('error', (err) => {
+        clearTimeout(timeout);
+        installProcesses.delete(toolId);
+        sendProgress({ status: 'error', message: err.message });
+        log(`install ${toolId} error: ${err.message}`);
+        resolve({ success: false, error: err.message });
+      });
+    });
+  });
+
+  ipcMain.handle('cancel-install', (event, { toolId }) => {
+    const proc = installProcesses.get(toolId);
+    if (proc) {
+      proc.kill('SIGTERM');
+      installProcesses.delete(toolId);
+      return true;
+    }
+    return false;
+  });
 
   ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
     const adapter = registry.get(toolId);
@@ -142,7 +316,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     const session = sessionManager.loadSession(sessionId);
     if (!session) return null;
     const ext = format === 'json' ? 'json' : 'md';
-    const result = await dialog.showSaveDialog(mainWindow, {
+    const result = await dialog.showSaveDialog(getMainWindow(), {
       defaultPath: `${session.name}.${ext}`,
       filters: [{ name: format === 'json' ? 'JSON' : 'Markdown', extensions: [ext] }],
     });
@@ -155,8 +329,8 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
       content = `# ${session.name}\n\n创建时间: ${new Date(session.createdAt).toLocaleString('zh-CN')}\n\n---\n\n`;
       session.messages.forEach((msg, i) => {
         content += `## 消息 ${i + 1}\n\n**你:** ${msg.content}\n\n`;
-        if (msg.toolResults) {
-          for (const [toolId, r] of Object.entries(msg.toolResults)) {
+        if (msg.toolResults || msg.toolOutputs) {
+          for (const [toolId, r] of Object.entries(msg.toolResults || msg.toolOutputs)) {
             content += `**${toolId}:**\n\n${r.content || r.error || '(无输出)'}\n\n`;
           }
         }
@@ -169,8 +343,23 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
   // === 自定义工具 ===
 
+  // command 字段白名单校验：只允许字母数字、@、-、_、.、/（覆盖 scoped package 和 Go 路径格式）
+  const SAFE_COMMAND_RE = /^[\w@\-./]+$/;
+  const MAX_COMMAND_LEN = 200;
+
+  function validateCommand(command) {
+    if (!command || typeof command !== 'string') return 'Command is required';
+    if (command.length > MAX_COMMAND_LEN) return `Command exceeds ${MAX_COMMAND_LEN} characters`;
+    if (!SAFE_COMMAND_RE.test(command)) return 'Command contains invalid characters (allowed: letters, digits, @, -, _, ., /)';
+    return null;
+  }
+
   ipcMain.handle('add-custom-tool', (event, tool) => {
     if (!tool || !tool.name) return { error: 'Name is required' };
+    if (tool.command) {
+      const err = validateCommand(tool.command);
+      if (err) return { error: err };
+    }
     const adapter = registry.addCustom(tool);
     return { id: adapter.id, name: adapter.name };
   });
@@ -183,6 +372,10 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
   ipcMain.handle('edit-custom-tool', (event, { id, name, command, args }) => {
     if (!id) return false;
+    if (command) {
+      const err = validateCommand(command);
+      if (err) return { error: err };
+    }
     const updates = {};
     if (name) updates.name = name;
     if (command) updates.command = command;
@@ -283,7 +476,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
   // === 目录 ===
 
   ipcMain.handle('select-directory', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
+    const result = await dialog.showOpenDialog(getMainWindow(), { properties: ['openDirectory'] });
     if (result.canceled) return null;
     return result.filePaths[0];
   });

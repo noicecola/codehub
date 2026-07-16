@@ -40,6 +40,9 @@ async function retryTool(toolId) {
     reply.dataset.done = '';
   }
 
+  // Clear any stale streaming state before retry
+  delete state.streaming[toolId];
+
   updatePanelStatus(toolId, 'running');
 
   try {
@@ -58,6 +61,8 @@ async function sendMessage() {
   const content = input.value.trim();
   if (!content || state.selectedTools.size === 0) return;
   if (!state.currentSessionId) return;
+  // Guard: prevent duplicate sends while a broadcast is in progress
+  if (state.isRunning) return;
 
   input.value = '';
   state.lastMessageContent = content;
@@ -100,6 +105,7 @@ function stopAll() {
   state.selectedTools.forEach(id => {
     window.codehub.stopTool(id);
     updatePanelStatus(id, 'idle');
+    delete state.streaming[id];
   });
   state.isRunning = false;
   updateSendButton();
@@ -120,3 +126,41 @@ function checkAllDone() {
     refreshSessionList();
   }
 }
+
+// === 发送按钮 Loading 状态 ===
+function setSendingState(sending) {
+  const btn = document.getElementById('send-btn');
+  if (!btn) return;
+  if (sending) {
+    btn.dataset.originalText = btn.textContent;
+    btn.innerHTML = '<span class="send-spinner"></span> 发送中...';
+    btn.classList.add('sending');
+    btn.disabled = true;
+  } else {
+    btn.textContent = btn.dataset.originalText || '发送';
+    btn.classList.remove('sending');
+  }
+}
+
+const _origSendMessage = window.sendMessage;
+if (_origSendMessage) {
+  window.sendMessage = async function() {
+    setSendingState(true);
+    try { await _origSendMessage(); }
+    finally { setSendingState(false); }
+  };
+}
+
+// === 字符计数 ===
+(function initCharCount() {
+  const input = document.getElementById('message-input');
+  const counter = document.getElementById('char-count');
+  if (!input || !counter) return;
+  input.addEventListener('input', () => {
+    const len = input.value.length;
+    counter.textContent = len;
+    counter.className = 'char-count';
+    if (len > 4000) counter.classList.add('danger');
+    else if (len > 3000) counter.classList.add('warning');
+  });
+})();

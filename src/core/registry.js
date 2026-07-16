@@ -47,7 +47,44 @@ class AdapterRegistry {
       name: a.name,
       available: a.isAvailable(),
       builtin: builtinIds.includes(a.id),
+      installCommand: a.getInstallCommand(),
+      installUrl: a.getInstallUrl(),
     }));
+  }
+
+  // 获取所有工具版本（异步）
+  async getVersions() {
+    const versions = {};
+    const promises = this.getAll().map(async (a) => {
+      if (a.isAvailable()) {
+        versions[a.id] = await a.getVersion();
+      }
+    });
+    await Promise.all(promises);
+    return versions;
+  }
+
+  // 获取未安装工具的安装命令
+  getInstallableTools() {
+    return this.getAll()
+      .filter(a => !a.isAvailable() && a.getInstallCommand())
+      .map(a => ({
+        id: a.id,
+        name: a.name,
+        installCommand: a.getInstallCommand(),
+      }));
+  }
+
+  getInstallInfo(toolId) {
+    const adapter = this.adapters.get(toolId);
+    if (!adapter) return null;
+    return {
+      id: adapter.id,
+      name: adapter.name,
+      installCommand: adapter.getInstallCommand(),
+      installUrl: adapter.getInstallUrl(),
+      available: adapter.isAvailable(),
+    };
   }
 
   // === 自定义工具持久化 ===

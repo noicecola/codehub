@@ -46,6 +46,17 @@ class MimoParser extends JSONLineParser {
   }
 }
 
+// Codex CLI JSON解析器
+class CodexParser extends JSONLineParser {
+  extract(obj) {
+    // codex --json 输出 item.completed 事件
+    if (obj.type === 'item.completed' && obj.item?.type === 'agent_message') {
+      return obj.item.text;
+    }
+    return null;
+  }
+}
+
 // 纯文本解析器（直接输出文本的工具）
 class PlainTextParser extends JSONLineParser {
   parseLine(line) {
@@ -88,6 +99,7 @@ class StreamParser {
 module.exports = {
   ClaudeParser,
   MimoParser,
+  CodexParser,
   PlainTextParser,
   StreamParser,
 };

@@ -2,7 +2,7 @@
 // 统一适配器接口，组合 Transport + Parser，支持配置驱动
 
 const { CLITransport, HTTPTransport } = require('./transport');
-const { ClaudeParser, MimoParser, PlainTextParser, StreamParser } = require('./parser');
+const { ClaudeParser, MimoParser, CodexParser, PlainTextParser, StreamParser } = require('./parser');
 
 class ToolAdapter {
   constructor(config) {
@@ -14,6 +14,7 @@ class ToolAdapter {
     this.args = config.args || [];
     this.options = config.options || {};
     this._prepareArgs = config.prepareArgs || null;
+    this._originalMessageAsArg = config.transport?.messageAsArg ?? true;
   }
 
   isAvailable() {
@@ -24,6 +25,32 @@ class ToolAdapter {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  getInstallCommand() {
+    return this.options?.installCommand || null;
+  }
+
+  getInstallUrl() {
+    return this.options?.installUrl || null;
+  }
+
+  async getVersion() {
+    try {
+      const cmd = this.transport.command || this.transport.baseUrl;
+      if (!cmd) return null;
+      const { execSync } = require('child_process');
+      // 尝试常见版本参数
+      for (const flag of ['--version', '-v', 'version']) {
+        try {
+          const output = execSync(`${cmd} ${flag}`, { timeout: 5000, encoding: 'utf8' }).trim();
+          if (output) return output.split('\n')[0]; // 取第一行
+        } catch {}
+      }
+      return null;
+    } catch {
+      return null;
     }
   }
 
@@ -51,7 +78,15 @@ class ToolAdapter {
 
     if (this._prepareArgs) {
       const newArgs = this._prepareArgs(workDir);
-      if (newArgs) this.transport.args = newArgs;
+      if (newArgs) {
+        this.transport.args = newArgs;
+        // claude --add-dir 模式下必须用 stdin 传递 prompt，不能作为参数
+        if (newArgs.includes('--add-dir')) {
+          this.transport.messageAsArg = false;
+        } else {
+          this.transport.messageAsArg = this._originalMessageAsArg;
+        }
+      }
     }
 
     const result = await this.transport.send(message, sendOptions);
@@ -75,6 +110,7 @@ class ToolAdapter {
 const PARSER_MAP = {
   claude: () => new ClaudeParser(),
   mimo: () => new MimoParser(),
+  codex: () => new CodexParser(),
   text: () => new PlainTextParser(),
 };
 
@@ -94,6 +130,10 @@ function createAdapterFromConfig(config) {
     streamParser: parserFactory(),
     args: config.args || [],
     prepareArgs: config.prepareArgs || null,
+    options: {
+      installCommand: config.installCommand || null,
+      installUrl: config.installUrl || null,
+    },
   });
 
   return adapter;

@@ -7,4 +7,7 @@ const state = {
   lastMessageContent: '',
   currentWorkDir: '',
   drafts: {},
+  // Tracks which tools are actively streaming chunks
+  // Prevents late stream-chunk events from creating duplicate reply elements
+  streaming: {},
 };

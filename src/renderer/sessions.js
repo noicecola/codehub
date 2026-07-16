@@ -84,7 +84,8 @@ function renderSessionHistory(session) {
 
   const toolIds = new Set();
   session.messages.forEach(msg => {
-    if (msg.toolOutputs) Object.keys(msg.toolOutputs).forEach(id => toolIds.add(id));
+    const outputs = msg.toolOutputs || msg.toolResults;
+    if (outputs) Object.keys(outputs).forEach(id => toolIds.add(id));
   });
 
   toolIds.forEach(toolId => {
@@ -94,7 +95,8 @@ function renderSessionHistory(session) {
 
     let hasOutput = false;
     session.messages.forEach(msg => {
-      if (msg.toolOutputs && msg.toolOutputs[toolId]) hasOutput = true;
+      const outputs = msg.toolOutputs || msg.toolResults;
+      if (outputs && outputs[toolId]) hasOutput = true;
     });
     if (!hasOutput) return;
 
@@ -110,8 +112,10 @@ function renderSessionHistory(session) {
       });
       panel.appendChild(userDiv);
 
-      if (msg.toolOutputs && msg.toolOutputs[toolId]) {
-          const output = msg.toolOutputs[toolId];
+      // Support both old field name (toolResults) and new (toolOutputs)
+      const outputs = msg.toolOutputs || msg.toolResults;
+      if (outputs && outputs[toolId]) {
+          const output = outputs[toolId];
           const replyDiv = document.createElement('div');
           replyDiv.className = 'panel-reply';
           replyDiv.dataset.done = 'true';
@@ -148,3 +152,38 @@ async function editSessionTags() {
   await refreshSessionList();
   toast.success(tags.length ? `标签已更新: ${tags.join(', ')}` : '标签已清除');
 }
+
+// === 会话切换过渡动画 ===
+function fadeTransition(callback) {
+  const wrapper = document.getElementById('panels-wrapper');
+  if (wrapper && !wrapper.classList.contains('hidden')) {
+    wrapper.style.opacity = '0';
+    wrapper.style.transition = 'opacity 0.15s ease';
+    setTimeout(() => { callback(); wrapper.style.opacity = '1'; }, 150);
+  } else {
+    callback();
+  }
+}
+
+const _origLoadSession = window.loadSession;
+if (_origLoadSession) {
+  window.loadSession = async function(id) {
+    fadeTransition(async () => { await _origLoadSession(id); });
+  };
+}
+
+const _origClearOutput = window.clearOutput;
+if (_origClearOutput) {
+  window.clearOutput = function() {
+    fadeTransition(() => { _origClearOutput(); });
+  };
+}
+
+// === 会话筛选按钮 ===
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    window.dispatchEvent(new CustomEvent('filter-sessions', { detail: { filter: btn.dataset.filter } }));
+  });
+});
