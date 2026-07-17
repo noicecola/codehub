@@ -28,7 +28,44 @@ function formatTime(ts) {
   return new Date(ts).toLocaleDateString('zh-CN');
 }
 
+// === 快捷键配置 ===
+const DEFAULT_SHORTCUTS = {
+  send: { key: 'Enter', ctrl: true, label: '发送消息' },
+  newSession: { key: 'n', ctrl: true, label: '新建会话' },
+  search: { key: 'k', ctrl: true, label: '搜索会话' },
+  toggleSidebar: { key: 'b', ctrl: true, label: '切换侧边栏' },
+};
+
+let shortcuts = { ...DEFAULT_SHORTCUTS };
+
+function loadShortcuts() {
+  try {
+    const saved = localStorage.getItem('codehub-shortcuts');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      shortcuts = { ...DEFAULT_SHORTCUTS, ...parsed };
+    }
+  } catch {}
+}
+
+function saveShortcuts() {
+  try {
+    localStorage.setItem('codehub-shortcuts', JSON.stringify(shortcuts));
+  } catch {}
+}
+
+function resetShortcuts() {
+  shortcuts = { ...DEFAULT_SHORTCUTS };
+  saveShortcuts();
+}
+
+function matchShortcut(e, shortcut) {
+  const mod = e.ctrlKey || e.metaKey;
+  return e.key.toLowerCase() === shortcut.key.toLowerCase() && mod === !!shortcut.ctrl;
+}
+
 async function init() {
+  loadShortcuts();
   const tools = await window.codehub.getTools();
   renderToolSelector(tools);
   setupEventListeners();
@@ -44,7 +81,7 @@ function setupEventListeners() {
   });
 
   document.getElementById('message-input').addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+    if (matchShortcut(e, shortcuts.send)) { e.preventDefault(); sendMessage(); }
   });
   document.getElementById('session-search').addEventListener('input', () => refreshSessionList());
   document.getElementById('send-btn').addEventListener('click', sendMessage);
@@ -52,10 +89,9 @@ function setupEventListeners() {
   document.getElementById('new-session-btn').addEventListener('click', createNewSession);
 
   document.addEventListener('keydown', (e) => {
-    const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key === 'n') { e.preventDefault(); createNewSession(); }
-    if (mod && e.key === 'k') { e.preventDefault(); document.getElementById('session-search').focus(); }
-    if (mod && e.key === 'b') { e.preventDefault(); document.getElementById('sidebar').classList.toggle('collapsed'); }
+    if (matchShortcut(e, shortcuts.newSession)) { e.preventDefault(); createNewSession(); }
+    if (matchShortcut(e, shortcuts.search)) { e.preventDefault(); document.getElementById('session-search').focus(); }
+    if (matchShortcut(e, shortcuts.toggleSidebar)) { e.preventDefault(); document.getElementById('sidebar').classList.toggle('collapsed'); }
   });
   document.getElementById('compare-btn').addEventListener('click', showCompareModal);
   document.getElementById('edit-tags-btn').addEventListener('click', editSessionTags);
@@ -140,3 +176,78 @@ document.addEventListener('keydown', (e) => {
 // === Welcome 页初始化 ===
 if (typeof renderToolStatusBar === 'function') renderToolStatusBar();
 if (typeof renderPresetBar === 'function') renderPresetBar();
+
+// === 快捷键设置 ===
+
+function renderShortcutsModal() {
+  const list = document.getElementById('shortcuts-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  Object.entries(shortcuts).forEach(([id, shortcut]) => {
+    const item = document.createElement('div');
+    item.className = 'shortcut-item';
+    const modLabel = shortcut.ctrl ? (navigator.platform.includes('Mac') ? '⌘' : 'Ctrl') : '';
+    const keyLabel = shortcut.key === 'Enter' ? '↵' : shortcut.key.toUpperCase();
+    item.innerHTML = `
+      <span class="shortcut-label">${shortcut.label}</span>
+      <div class="shortcut-keys">
+        <kbd>${modLabel}</kbd><span>+</span><kbd>${keyLabel}</kbd>
+      </div>
+      <button class="shortcut-edit-btn" data-shortcut="${id}">修改</button>`;
+    item.querySelector('.shortcut-edit-btn').addEventListener('click', () => editShortcut(id));
+    list.appendChild(item);
+  });
+
+  document.getElementById('shortcuts-modal').classList.remove('hidden');
+}
+
+let recordingShortcut = null;
+
+function editShortcut(id) {
+  recordingShortcut = id;
+  const item = document.querySelector(`[data-shortcut="${id}"]`).closest('.shortcut-item');
+  const keysDiv = item.querySelector('.shortcut-keys');
+  keysDiv.innerHTML = '<span class="recording-hint">按下新快捷键...</span>';
+
+  const handler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === 'Escape') {
+      recordingShortcut = null;
+      renderShortcutsModal();
+      document.removeEventListener('keydown', handler, true);
+      return;
+    }
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl || (e.key.length === 1 && !e.altKey && !e.shiftKey)) {
+      shortcuts[id] = { ...shortcuts[id], key: e.key, ctrl };
+      saveShortcuts();
+      recordingShortcut = null;
+      renderShortcutsModal();
+      document.removeEventListener('keydown', handler, true);
+    }
+  };
+  document.addEventListener('keydown', handler, true);
+}
+
+document.getElementById('reset-shortcuts-btn')?.addEventListener('click', () => {
+  resetShortcuts();
+  renderShortcutsModal();
+});
+
+// 绑定快捷键设置入口（在工具管理按钮旁）
+document.getElementById('manage-tools-btn')?.addEventListener('click', () => {
+  // 原有的工具管理逻辑已在 setupEventListeners 中绑定
+});
+
+// 在 sidebar-footer 添加快捷键按钮
+const sidebarFooter = document.querySelector('.sidebar-footer');
+if (sidebarFooter) {
+  const shortcutsBtn = document.createElement('button');
+  shortcutsBtn.id = 'manage-shortcuts-btn';
+  shortcutsBtn.className = 'sidebar-tool-btn';
+  shortcutsBtn.innerHTML = '<span class="btn-icon">⌨️</span> 快捷键';
+  shortcutsBtn.addEventListener('click', renderShortcutsModal);
+  sidebarFooter.appendChild(shortcutsBtn);
+}
