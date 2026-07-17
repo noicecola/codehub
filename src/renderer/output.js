@@ -1,10 +1,8 @@
 // === 输出面板 ===
-// 消息虚拟化：限制渲染数量，优化大量消息时的性能
-
-const MAX_RENDERED_MESSAGES = 50;
-const panelMessageCounts = {};
+// 真正的虚拟滚动：只渲染可视区域的消息
 
 let scrollbarInited = false;
+const panelVirtualScrolls = {};
 
 function initScrollbar() {
   if (scrollbarInited) return;
@@ -63,6 +61,67 @@ function initScrollbar() {
   content.addEventListener('scroll', updateThumb);
 
   new MutationObserver(updateThumb).observe(content, { childList: true, subtree: true });
+}
+
+function initPanelVirtualScroll(toolId) {
+  if (panelVirtualScrolls[toolId]) return panelVirtualScrolls[toolId];
+
+  const panel = document.getElementById(`panel-content-${toolId}`);
+  if (!panel) return null;
+
+  panel.innerHTML = '';
+  panel.style.position = 'relative';
+  panel.style.overflow = 'auto';
+
+  const vs = new VirtualScroll(panel, {
+    estimatedItemHeight: 60,
+    bufferSize: 10,
+    renderCallback: (item, index) => {
+      const el = document.createElement('div');
+      el.className = item.type === 'user' ? 'panel-user-msg virtual-item' : 'panel-reply virtual-item';
+
+      if (item.type === 'user') {
+        el.innerHTML = `
+          <span class="msg-avatar user-avatar">👤</span>
+          <span class="msg-text">${esc(item.content)}</span>
+          <button class="copy-msg-btn" title="复制">📋</button>`;
+        el.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(item.content);
+          e.target.textContent = '✓';
+          setTimeout(() => e.target.textContent = '📋', 1500);
+        });
+      } else if (item.type === 'separator') {
+        el.className = 'panel-round-separator virtual-item';
+        el.textContent = item.content;
+      } else if (item.type === 'reply') {
+        el.innerHTML = `
+          <span class="msg-avatar ai-avatar">🤖</span>
+          <span class="reply-body">${item.html || esc(item.content)}</span>
+          <button class="copy-msg-btn" title="复制">📋</button>`;
+        el.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(item.content);
+          e.target.textContent = '✓';
+          setTimeout(() => e.target.textContent = '📋', 1500);
+        });
+        if (item.isError) el.classList.add('panel-reply-error');
+      }
+
+      return el;
+    },
+    onItemRender: (el, item, index) => {
+      if (item.type === 'reply') {
+        const body = el.querySelector('.reply-body');
+        if (body) {
+          body.innerHTML = item.html || esc(item.content);
+        }
+      }
+    },
+  });
+
+  panelVirtualScrolls[toolId] = vs;
+  return vs;
 }
 
 function showToolPanels() {
@@ -131,7 +190,6 @@ function showToolPanels() {
         track.classList.add('active');
         const trackH = track.clientHeight;
         const thumbH = Math.max(30, trackH * ratio);
-        const maxScroll = content.scrollHeight - content.clientHeight;
         thumb.style.height = thumbH + 'px';
         thumb.style.top = '0px';
         thumb.style.display = '';
@@ -140,154 +198,72 @@ function showToolPanels() {
   });
 }
 
-function trimPanelMessages(panel, toolId) {
-  if (!panel) return;
-  const children = Array.from(panel.children);
-  const count = children.length;
-
-  if (count <= MAX_RENDERED_MESSAGES + 10) return;
-
-  let loadMoreBtn = panel.querySelector('.load-more-btn');
-  if (!loadMoreBtn) {
-    loadMoreBtn = document.createElement('button');
-    loadMoreBtn.className = 'load-more-btn';
-    loadMoreBtn.textContent = '加载更多消息...';
-    loadMoreBtn.addEventListener('click', () => {
-      const hidden = panel.querySelectorAll('.message-trimmed');
-      hidden.forEach(el => {
-        el.classList.remove('message-trimmed');
-        el.style.display = '';
-      });
-      loadMoreBtn.remove();
-      panelMessageCounts[toolId] = 0;
-    });
-    panel.insertBefore(loadMoreBtn, panel.firstChild);
-  }
-
-  const hideCount = count - MAX_RENDERED_MESSAGES;
-  for (let i = 0; i < hideCount && i < children.length - 5; i++) {
-    const el = children[i];
-    if (el.classList.contains('load-more-btn')) continue;
-    el.classList.add('message-trimmed');
-    el.style.display = 'none';
-  }
-}
-
 function appendUserMessage(content) {
   showToolPanels();
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
   state.selectedTools.forEach(toolId => {
-    const panel = document.getElementById(`panel-content-${toolId}`);
-    if (!panel) return;
-    if (panel.children.length > 0) {
-      const sep = document.createElement('div');
-      sep.className = 'panel-round-separator';
-      sep.textContent = timeStr;
-      panel.appendChild(sep);
+    const vs = initPanelVirtualScroll(toolId);
+    if (!vs) return;
+
+    const items = vs.getItems();
+    if (items.length > 0) {
+      vs.addItem({ type: 'separator', content: timeStr });
     }
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'panel-user-msg';
-    msgDiv.innerHTML = `<span class="msg-avatar user-avatar">👤</span><span class="msg-text">${esc(content)}</span><button class="copy-msg-btn" title="复制">📋</button>`;
-    msgDiv.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(content);
-      e.target.textContent = '✓';
-      setTimeout(() => e.target.textContent = '📋', 1500);
-    });
-    panel.appendChild(msgDiv);
-    panelMessageCounts[toolId] = (panelMessageCounts[toolId] || 0) + 1;
-    if (panelMessageCounts[toolId] > MAX_RENDERED_MESSAGES) {
-      trimPanelMessages(panel, toolId);
-    }
+    vs.addItem({ type: 'user', content });
   });
   scrollAllPanels();
 }
 
 function appendToOutput(toolId, text) {
-  const panel = document.getElementById(`panel-content-${toolId}`);
-  if (!panel) return;
+  const vs = initPanelVirtualScroll(toolId);
+  if (!vs) return;
 
-  let reply = panel.querySelector('.panel-reply:last-child');
-
-  // Guard: if the last reply is finalized (done), it means tool-done fired
-  // before all stream-chunks arrived (race condition). Do NOT create a new
-  // reply — append to the existing one to keep content together.
-  // Only create a new reply when there's no previous reply at all.
-  if (!reply) {
-    reply = document.createElement('div');
-    reply.className = 'panel-reply';
-    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span><button class="copy-msg-btn" title="复制">📋</button>`;
-    reply.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const body = reply.querySelector('.reply-body');
-      navigator.clipboard.writeText(body ? body.textContent : reply.textContent);
-      e.target.textContent = '✓';
-      setTimeout(() => e.target.textContent = '📋', 1500);
-    });
-    panel.appendChild(reply);
-  }
-
-  // Mark this tool as actively streaming (after finding/creating the reply)
   state.streaming[toolId] = true;
 
-  const body = reply.querySelector('.reply-body');
-  if (body) body.textContent += text;
-  else reply.textContent += text;
+  const items = vs.getItems();
+  const lastItem = items[items.length - 1];
+
+  if (lastItem && lastItem.type === 'reply' && !lastItem.done) {
+    lastItem.content += text;
+    lastItem.html = renderMarkdown(lastItem.content);
+    vs.updateLastItem(lastItem.content);
+  } else {
+    vs.addItem({
+      type: 'reply',
+      content: text,
+      html: renderMarkdown(text),
+      done: false,
+    });
+  }
   scrollPanel(toolId);
 }
 
 function finalizeOutput(toolId, content, isError) {
-  // Clear streaming state for this tool
   delete state.streaming[toolId];
 
-  const panel = document.getElementById(`panel-content-${toolId}`);
-  if (!panel) return;
-  let reply = panel.querySelector('.panel-reply:last-child');
-  if (!reply) {
-    reply = document.createElement('div');
-    reply.className = 'panel-reply';
-    reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body"></span><button class="copy-msg-btn" title="复制">📋</button>`;
-    reply.querySelector('.copy-msg-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const body = reply.querySelector('.reply-body');
-      navigator.clipboard.writeText(body ? body.textContent : reply.textContent);
-      e.target.textContent = '✓';
-      setTimeout(() => e.target.textContent = '📋', 1500);
-    });
-    const body = reply.querySelector('.reply-body');
-    if (isError) {
-      reply.classList.add('panel-reply-error');
-      body.innerHTML = formatError(content || '(无输出)');
-    } else {
-      const rendered = renderMarkdown(content || '(无输出)');
-      if (content && content.length > 8000) {
-        body.innerHTML = renderMarkdown(content.substring(0, 8000));
-        const btn = document.createElement('button');
-        btn.className = 'show-more-btn';
-        btn.textContent = `显示全部 (${(content.length / 1000).toFixed(0)}k chars)`;
-        btn.addEventListener('click', () => {
-          body.innerHTML = renderMarkdown(content);
-          reply.dataset.done = 'true';
-        });
-        body.appendChild(btn);
-      } else {
-        body.innerHTML = rendered;
-      }
-    }
-    panel.appendChild(reply);
+  const vs = panelVirtualScrolls[toolId];
+  if (!vs) return;
+
+  const items = vs.getItems();
+  const lastItem = items[items.length - 1];
+
+  if (lastItem && lastItem.type === 'reply' && !lastItem.done) {
+    lastItem.content = content || '(无输出)';
+    lastItem.html = isError ? formatError(content || '(无输出)') : renderMarkdown(content || '(无输出)');
+    lastItem.done = true;
+    lastItem.isError = isError;
+    vs.updateLastItem(lastItem.content);
   } else {
-    reply.dataset.done = 'true';
-    const body = reply.querySelector('.reply-body');
-    const finalContent = content || (body ? body.textContent : '') || '(无输出)';
-    if (isError) {
-      reply.classList.add('panel-reply-error');
-      if (body) body.innerHTML = formatError(finalContent);
-      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${formatError(finalContent)}</span>`;
-    } else {
-      if (body) body.innerHTML = renderMarkdown(finalContent);
-      else reply.innerHTML = `<span class="msg-avatar ai-avatar">🤖</span><span class="reply-body">${renderMarkdown(finalContent)}</span>`;
-    }
+    const rendered = isError ? formatError(content || '(无输出)') : renderMarkdown(content || '(无输出)');
+    vs.addItem({
+      type: 'reply',
+      content: content || '(无输出)',
+      html: rendered,
+      done: true,
+      isError,
+    });
   }
   scrollPanel(toolId);
 }
@@ -301,13 +277,13 @@ function formatError(text) {
 }
 
 function showToolStats(toolId, result) {
-  const panel = document.getElementById(`panel-content-${toolId}`);
+  const panel = document.getElementById(`panel-${toolId}`);
   if (!panel) return;
   let stats = panel.querySelector('.panel-stats');
   if (!stats) {
     stats = document.createElement('div');
     stats.className = 'panel-stats';
-    panel.appendChild(stats);
+    panel.querySelector('.tool-panel-content')?.appendChild(stats);
   }
   const elapsed = result.elapsed || 0;
   const len = (result.content || '').length;
@@ -349,8 +325,8 @@ function togglePanel(toolId, visible) {
 }
 
 function scrollPanel(toolId) {
-  const panel = document.getElementById(`panel-content-${toolId}`);
-  if (panel) panel.scrollTop = panel.scrollHeight;
+  const vs = panelVirtualScrolls[toolId];
+  if (vs) vs.scrollToBottom();
 }
 
 function scrollAllPanels() {
@@ -360,7 +336,7 @@ function scrollAllPanels() {
 function clearOutput() {
   document.getElementById('welcome-screen').classList.remove('hidden');
   document.getElementById('panels-wrapper').classList.add('hidden');
-  document.querySelectorAll('.tool-panel-content').forEach(el => el.innerHTML = '');
+  Object.values(panelVirtualScrolls).forEach(vs => vs.clear());
 }
 
 // === 运行计时器 ===
@@ -392,7 +368,6 @@ function updateTimerDisplay(toolId) {
   timerEl.textContent = `${((Date.now() - timer.startTime) / 1000).toFixed(1)}s`;
 }
 
-// Hook: updatePanelStatus 时自动启停计时器
 const _origUpdatePanelStatus = window.updatePanelStatus;
 if (_origUpdatePanelStatus) {
   window.updatePanelStatus = function(toolId, status) {

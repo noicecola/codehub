@@ -3,7 +3,7 @@ function renderToolSelector(tools) {
   container.innerHTML = '';
 
   const savedTools = loadSelectedTools();
-  const hasSavedState = savedTools !== null;
+  const hasSavedState = savedTools !== null && savedTools.size > 0;
 
   tools.forEach(tool => {
     const label = document.createElement('label');
