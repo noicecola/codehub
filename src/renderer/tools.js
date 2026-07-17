@@ -2,24 +2,14 @@ function renderToolSelector(tools) {
   const container = document.getElementById('tool-selector');
   container.innerHTML = '';
 
-  const savedTools = loadSelectedTools();
-  const hasSavedState = savedTools !== null && savedTools.size > 0;
-
   tools.forEach(tool => {
     const label = document.createElement('label');
     label.className = `tool-checkbox ${tool.available ? '' : 'unavailable'}`;
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-
-    if (hasSavedState) {
-      cb.checked = savedTools.has(tool.id) && tool.available;
-    } else {
-      cb.checked = tool.available;
-    }
-
+    cb.checked = tool.available;
     cb.disabled = !tool.available;
-    if (cb.checked) state.selectedTools.add(tool.id);
-    else state.selectedTools.delete(tool.id);
+    if (tool.available) state.selectedTools.add(tool.id);
 
     cb.addEventListener('change', (e) => {
       e.target.checked ? state.selectedTools.add(tool.id) : state.selectedTools.delete(tool.id);
@@ -28,7 +18,6 @@ function renderToolSelector(tools) {
       togglePanel(tool.id, e.target.checked);
       updateSendButton();
       updateSelectedInfo();
-      saveSelectedTools();
     });
     if (cb.checked) label.classList.add('selected');
     const dot = document.createElement('span');
