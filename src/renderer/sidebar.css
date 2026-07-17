@@ -144,6 +144,41 @@
   color: white;
 }
 
+.tag-filter {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.tag-filter:empty {
+  display: none;
+}
+
+.tag-filter-btn {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.tag-filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tag-filter-btn.active {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .filter-count {
   display: inline-flex;
   align-items: center;
@@ -239,8 +274,13 @@
   transition: var(--transition);
 }
 
-.session-tag:hover { 
+.session-tag:hover {
   background: rgba(255, 107, 0, 0.15);
+}
+
+.session-tag.active {
+  background: var(--accent);
+  color: white;
 }
 
 .session-snippet {

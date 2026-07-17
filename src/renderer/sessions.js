@@ -12,18 +12,29 @@ async function loadOrCreateSession() {
   }
 }
 
+let selectedTagFilter = null;
+
 async function refreshSessionList() {
   const query = (document.getElementById('session-search')?.value || '').trim();
   const sessions = query
     ? await window.codehub.searchSessions(query)
     : await window.codehub.listSessions();
+
+  renderTagFilter(sessions);
+
+  const filteredSessions = selectedTagFilter
+    ? sessions.filter(s => (s.tags || []).includes(selectedTagFilter))
+    : sessions;
+
   const list = document.getElementById('session-list');
   list.innerHTML = '';
 
-  sessions.forEach(s => {
+  filteredSessions.forEach(s => {
     const item = document.createElement('div');
     item.className = `session-item ${s.id === state.currentSessionId ? 'active' : ''}`;
-    const tagsHtml = (s.tags || []).map(t => `<span class="session-tag">${esc(t)}</span>`).join('');
+    const tagsHtml = (s.tags || []).map(t =>
+      `<span class="session-tag ${t === selectedTagFilter ? 'active' : ''}" data-tag="${esc(t)}">${esc(t)}</span>`
+    ).join('');
     const snippetHtml = s.matchSnippet ? `<div class="session-snippet">${esc(s.matchSnippet)}</div>` : '';
     item.innerHTML = `
       <div class="session-info">
@@ -34,10 +45,36 @@ async function refreshSessionList() {
       </div>
       <button class="session-delete" data-id="${s.id}">&times;</button>`;
     item.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('session-delete') && !e.target.classList.contains('session-tag')) loadSession(s.id);
+      if (e.target.classList.contains('session-tag')) {
+        const tag = e.target.dataset.tag;
+        selectedTagFilter = selectedTagFilter === tag ? null : tag;
+        refreshSessionList();
+        return;
+      }
+      if (!e.target.classList.contains('session-delete')) loadSession(s.id);
     });
     item.querySelector('.session-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(s.id); });
     list.appendChild(item);
+  });
+}
+
+function renderTagFilter(sessions) {
+  const container = document.getElementById('tag-filter');
+  if (!container) return;
+
+  const allTags = new Set();
+  sessions.forEach(s => (s.tags || []).forEach(t => allTags.add(t)));
+
+  container.innerHTML = '';
+  allTags.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = `tag-filter-btn ${tag === selectedTagFilter ? 'active' : ''}`;
+    btn.textContent = tag;
+    btn.addEventListener('click', () => {
+      selectedTagFilter = selectedTagFilter === tag ? null : tag;
+      refreshSessionList();
+    });
+    container.appendChild(btn);
   });
 }
 

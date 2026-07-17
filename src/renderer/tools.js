@@ -1,14 +1,26 @@
 function renderToolSelector(tools) {
   const container = document.getElementById('tool-selector');
   container.innerHTML = '';
+
+  const savedTools = loadSelectedTools();
+  const hasSavedState = savedTools !== null;
+
   tools.forEach(tool => {
     const label = document.createElement('label');
     label.className = `tool-checkbox ${tool.available ? '' : 'unavailable'}`;
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    cb.checked = tool.available;
+
+    if (hasSavedState) {
+      cb.checked = savedTools.has(tool.id) && tool.available;
+    } else {
+      cb.checked = tool.available;
+    }
+
     cb.disabled = !tool.available;
-    if (tool.available) state.selectedTools.add(tool.id);
+    if (cb.checked) state.selectedTools.add(tool.id);
+    else state.selectedTools.delete(tool.id);
+
     cb.addEventListener('change', (e) => {
       e.target.checked ? state.selectedTools.add(tool.id) : state.selectedTools.delete(tool.id);
       label.classList.toggle('selected', e.target.checked);
@@ -16,10 +28,11 @@ function renderToolSelector(tools) {
       togglePanel(tool.id, e.target.checked);
       updateSendButton();
       updateSelectedInfo();
+      saveSelectedTools();
     });
-    if (tool.available) label.classList.add('selected');
+    if (cb.checked) label.classList.add('selected');
     const dot = document.createElement('span');
-    dot.className = `tool-status ${tool.available ? 'selected' : ''}`;
+    dot.className = `tool-status ${cb.checked ? 'selected' : ''}`;
     dot.id = `status-${tool.id}`;
     const txt = document.createElement('span');
     txt.textContent = tool.name;
