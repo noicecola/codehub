@@ -13,16 +13,17 @@ class CLITransport {
     this.messageAsArg = options.messageAsArg || false;
   }
 
-  async send(message, { workDir, onStdout, onStderr } = {}) {
+  async send(message, { workDir, onStdout, onStderr, args: overrideArgs, messageAsArg: overrideMessageAsArg } = {}) {
     return new Promise((resolve, reject) => {
-      let args = [...this.args];
-      
+      const finalArgs = overrideArgs || [...this.args];
+      const finalMessageAsArg = overrideMessageAsArg !== undefined ? overrideMessageAsArg : this.messageAsArg;
+
       // 如果配置了 messageAsArg，将消息作为参数传递
-      if (this.messageAsArg && message) {
-        args.push(message);
+      if (finalMessageAsArg && message) {
+        finalArgs.push(message);
       }
 
-      this.process = spawn(this.command, args, {
+      this.process = spawn(this.command, finalArgs, {
         cwd: workDir || require('os').homedir(),
         env: { ...process.env, ...this.options.env },
       });

@@ -5,7 +5,7 @@ Multi-tool message dispatch desktop app — Send the same message to multiple AI
 ## Features
 
 ### Core
-- **Multi-tool parallel**: Send messages to 9 built-in AI coding tools at once, results appear as each tool finishes
+- **Multi-tool parallel**: Send messages to 8 built-in AI coding tools at once, results appear as each tool finishes
 - **Streaming output**: Real-time display of each tool's response process
 - **Result comparison**: Side-by-side comparison of different tools' outputs
 - **Artifact tracking**: Automatically detect file changes (create/modify/delete) after tool execution

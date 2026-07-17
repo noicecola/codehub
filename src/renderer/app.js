@@ -1,5 +1,25 @@
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function sanitizeHtml(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const body = doc.body;
+  const dangerousTags = ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button', 'select'];
+  const dangerousAttrs = ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit', 'onchange', 'onkeydown', 'onkeyup', 'onkeypress'];
+  body.querySelectorAll('*').forEach(el => {
+    if (dangerousTags.includes(el.tagName.toLowerCase())) {
+      el.remove();
+      return;
+    }
+    dangerousAttrs.forEach(attr => el.removeAttribute(attr));
+    if (el.tagName === 'A') {
+      el.removeAttribute('onclick');
+      const href = el.getAttribute('href') || '';
+      if (href.startsWith('javascript:')) el.removeAttribute('href');
+    }
+  });
+  return body.innerHTML;
+}
+
 function formatTime(ts) {
   const diff = Date.now() - ts;
   if (diff < 60000) return '刚刚';

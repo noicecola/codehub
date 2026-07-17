@@ -4,6 +4,7 @@
 const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { app } = require('electron');
 const { spawn } = require('child_process');
 
@@ -93,7 +94,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     const results = {};
     const artifacts = {};
     const mainWindow = getMainWindow();
-    const targetDir = workDir || __dirname;
+    const targetDir = workDir || os.homedir();
     const MAX_RETRIES = 1;
 
     const promises = toolIds.map(async (toolId) => {
@@ -269,7 +270,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
   ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
     const adapter = registry.get(toolId);
     if (!adapter) return { error: `Unknown tool: ${toolId}` };
-    const targetDir = workDir || __dirname;
+    const targetDir = workDir || os.homedir();
     const mainWindow = getMainWindow();
     let timeoutId;
     try {

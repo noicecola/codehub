@@ -115,7 +115,7 @@ class AdapterRegistry {
         command: a.transport.command || '',
         url: a.transport.baseUrl || '',
         path: a.transport.options?.path || '',
-        args: a.args.join(' '),
+        args: Array.isArray(a.args) ? a.args : [],
       }));
     fs.writeFileSync(this.customToolsFile, JSON.stringify(tools, null, 2), 'utf8');
   }

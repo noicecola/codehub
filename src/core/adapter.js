@@ -58,33 +58,30 @@ class ToolAdapter {
     const parser = new StreamParser(this.streamParser);
     let fullContent = '';
 
+    const handleChunk = (data) => {
+      const texts = parser.feed(data);
+      texts.forEach(t => {
+        fullContent += t;
+        if (onChunk) onChunk(t);
+      });
+    };
+
     const sendOptions = {
       workDir,
-      onStdout: (data) => {
-        const texts = parser.feed(data);
-        texts.forEach(t => {
-          fullContent += t;
-          if (onChunk) onChunk(t);
-        });
-      },
-      onStderr: (data) => {
-        const texts = parser.feed(data);
-        texts.forEach(t => {
-          fullContent += t;
-          if (onChunk) onChunk(t);
-        });
-      },
+      onStdout: handleChunk,
+      onStderr: handleChunk,
+      onChunk: handleChunk,
     };
 
     if (this._prepareArgs) {
       const newArgs = this._prepareArgs(workDir);
       if (newArgs) {
-        this.transport.args = newArgs;
+        sendOptions.args = newArgs;
         // claude --add-dir 模式下必须用 stdin 传递 prompt，不能作为参数
         if (newArgs.includes('--add-dir')) {
-          this.transport.messageAsArg = false;
+          sendOptions.messageAsArg = false;
         } else {
-          this.transport.messageAsArg = this._originalMessageAsArg;
+          sendOptions.messageAsArg = this._originalMessageAsArg;
         }
       }
     }
@@ -142,7 +139,7 @@ function createAdapterFromConfig(config) {
 // === 自定义适配器工厂 ===
 
 function createCustomAdapter(config) {
-  const args = Array.isArray(config.args) ? config.args : [];
+  const args = Array.isArray(config.args) ? config.args : (typeof config.args === 'string' ? config.args.split(/\s+/).filter(Boolean) : []);
   const type = config.type || 'cli';
 
   if (type === 'http') {

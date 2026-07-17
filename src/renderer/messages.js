@@ -18,7 +18,7 @@ const _markedConfigured = (() => {
 
 function renderMarkdown(text) {
   if (!_markedConfigured) return esc(text);
-  try { return marked.parse(text); } catch { return esc(text); }
+  try { return sanitizeHtml(marked.parse(text)); } catch { return esc(text); }
 }
 
 // === 消息发送 ===
