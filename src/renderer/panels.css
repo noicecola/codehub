@@ -707,10 +707,37 @@
   transition: var(--transition);
 }
 
-.show-more-btn:hover { 
-  border-color: var(--accent); 
+.show-more-btn:hover {
+  border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-subtle);
+}
+
+/* 虚拟滚动优化 */
+.load-more-btn {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-subtle);
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  transition: var(--transition);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.load-more-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.message-trimmed {
+  display: none !important;
 }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }

@@ -1,4 +1,8 @@
 // === 输出面板 ===
+// 消息虚拟化：限制渲染数量，优化大量消息时的性能
+
+const MAX_RENDERED_MESSAGES = 50;
+const panelMessageCounts = {};
 
 let scrollbarInited = false;
 
@@ -136,6 +140,39 @@ function showToolPanels() {
   });
 }
 
+function trimPanelMessages(panel, toolId) {
+  if (!panel) return;
+  const children = Array.from(panel.children);
+  const count = children.length;
+
+  if (count <= MAX_RENDERED_MESSAGES + 10) return;
+
+  let loadMoreBtn = panel.querySelector('.load-more-btn');
+  if (!loadMoreBtn) {
+    loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'load-more-btn';
+    loadMoreBtn.textContent = '加载更多消息...';
+    loadMoreBtn.addEventListener('click', () => {
+      const hidden = panel.querySelectorAll('.message-trimmed');
+      hidden.forEach(el => {
+        el.classList.remove('message-trimmed');
+        el.style.display = '';
+      });
+      loadMoreBtn.remove();
+      panelMessageCounts[toolId] = 0;
+    });
+    panel.insertBefore(loadMoreBtn, panel.firstChild);
+  }
+
+  const hideCount = count - MAX_RENDERED_MESSAGES;
+  for (let i = 0; i < hideCount && i < children.length - 5; i++) {
+    const el = children[i];
+    if (el.classList.contains('load-more-btn')) continue;
+    el.classList.add('message-trimmed');
+    el.style.display = 'none';
+  }
+}
+
 function appendUserMessage(content) {
   showToolPanels();
   const now = new Date();
@@ -159,6 +196,10 @@ function appendUserMessage(content) {
       setTimeout(() => e.target.textContent = '📋', 1500);
     });
     panel.appendChild(msgDiv);
+    panelMessageCounts[toolId] = (panelMessageCounts[toolId] || 0) + 1;
+    if (panelMessageCounts[toolId] > MAX_RENDERED_MESSAGES) {
+      trimPanelMessages(panel, toolId);
+    }
   });
   scrollAllPanels();
 }
