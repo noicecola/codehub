@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const { app } = require('electron');
 const { spawn } = require('child_process');
+const { IPC } = require('./ipc-channels');
 
 function registerHandlers({ registry, router, sessionManager, fileTracker, getMainWindow, getCurrentSessionId, setCurrentSessionId, log }) {
 
@@ -23,9 +24,9 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
   // === 工具 ===
 
-  ipcMain.handle('get-tools', () => registry.list());
+  ipcMain.handle(IPC.GET_TOOLS, () => registry.list());
 
-  ipcMain.handle('get-tool-versions', async () => {
+  ipcMain.handle(IPC.GET_TOOL_VERSIONS, async () => {
     try {
       return await registry.getVersions();
     } catch (err) {
@@ -34,9 +35,9 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     }
   });
 
-  ipcMain.handle('get-installable-tools', () => registry.getInstallableTools());
+  ipcMain.handle(IPC.GET_INSTALLABLE_TOOLS, () => registry.getInstallableTools());
 
-  ipcMain.handle('batch-install', async (event, { toolIds }) => {
+  ipcMain.handle(IPC.BATCH_INSTALL, async (event, { toolIds }) => {
     const results = {};
     const mainWindow = getMainWindow();
 
@@ -89,7 +90,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     return results;
   });
 
-  ipcMain.handle('broadcast-message', async (event, { content, toolIds, workDir }) => {
+  ipcMain.handle(IPC.BROADCAST_MESSAGE, async (event, { content, toolIds, workDir }) => {
     log(`broadcast: "${content.substring(0, 50)}" tools=${toolIds}`);
     const results = {};
     const artifacts = {};
@@ -111,7 +112,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
           const result = await Promise.race([
             adapter.run(content, workDir || targetDir, (chunk) => {
               if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send('stream-chunk', { toolId, chunk });
+                mainWindow.webContents.send(IPC.STREAM_CHUNK, { toolId, chunk });
               }
             }),
             new Promise((_, reject) => {
@@ -129,7 +130,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
           artifacts[toolId] = await fileTracker.diff(toolId, targetDir);
 
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('tool-done', { toolId, result: { ...result }, artifacts: artifacts[toolId] || [] });
+            mainWindow.webContents.send(IPC.TOOL_DONE, { toolId, result: { ...result }, artifacts: artifacts[toolId] || [] });
           }
           return;
         } catch (err) {
@@ -146,7 +147,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
           results[toolId] = { error: err.message, elapsed };
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('tool-done', { toolId, result: { error: err.message, elapsed }, artifacts: [] });
+            mainWindow.webContents.send(IPC.TOOL_DONE, { toolId, result: { error: err.message, elapsed }, artifacts: [] });
           }
         }
       }
@@ -159,19 +160,19 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     if (sessionId) {
       sessionManager.addMessage(sessionId, { content, toolResults: results, artifacts });
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('session-updated', sessionId);
+        mainWindow.webContents.send(IPC.SESSION_UPDATED, sessionId);
       }
     }
     return { results, artifacts };
   });
 
-  ipcMain.handle('stop-tool', (event, toolId) => router.stop(toolId));
+  ipcMain.handle(IPC.STOP_TOOL, (event, toolId) => router.stop(toolId));
 
   // === 一键安装 ===
 
   const installProcesses = new Map();
 
-  ipcMain.handle('install-tool', async (event, { toolId }) => {
+  ipcMain.handle(IPC.INSTALL_TOOL, async (event, { toolId }) => {
     const info = registry.getInstallInfo(toolId);
     if (!info) return { success: false, error: `Unknown tool: ${toolId}` };
     if (info.available) return { success: false, error: 'Tool is already installed' };
@@ -180,7 +181,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     const mainWindow = getMainWindow();
     const sendProgress = (data) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('install-progress', { toolId, ...data });
+        mainWindow.webContents.send(IPC.INSTALL_PROGRESS, { toolId, ...data });
       }
     };
 
@@ -257,7 +258,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     });
   });
 
-  ipcMain.handle('cancel-install', (event, { toolId }) => {
+  ipcMain.handle(IPC.CANCEL_INSTALL, (event, { toolId }) => {
     const proc = installProcesses.get(toolId);
     if (proc) {
       proc.kill('SIGTERM');
@@ -267,7 +268,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     return false;
   });
 
-  ipcMain.handle('retry-tool', async (event, { toolId, content, workDir }) => {
+  ipcMain.handle(IPC.RETRY_TOOL, async (event, { toolId, content, workDir }) => {
     const adapter = registry.get(toolId);
     if (!adapter) return { error: `Unknown tool: ${toolId}` };
     const targetDir = workDir || os.homedir();
@@ -277,7 +278,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
       const result = await Promise.race([
         adapter.run(content, workDir || targetDir, (chunk) => {
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('stream-chunk', { toolId, chunk });
+            mainWindow.webContents.send(IPC.STREAM_CHUNK, { toolId, chunk });
           }
         }),
         new Promise((_, reject) => {
@@ -299,7 +300,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
   // === 产物 ===
 
-  ipcMain.handle('read-file', (event, { dir, filePath }) => {
+  ipcMain.handle(IPC.READ_FILE, (event, { dir, filePath }) => {
     try {
       const resolved = path.resolve(dir, filePath);
       if (!resolved.startsWith(path.resolve(dir))) {
@@ -313,7 +314,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
   // === 导出 ===
 
-  ipcMain.handle('export-session', async (event, { sessionId, format }) => {
+  ipcMain.handle(IPC.EXPORT_SESSION, async (event, { sessionId, format }) => {
     const session = sessionManager.loadSession(sessionId);
     if (!session) return null;
     const ext = format === 'json' ? 'json' : 'md';
@@ -355,7 +356,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     return null;
   }
 
-  ipcMain.handle('add-custom-tool', (event, tool) => {
+  ipcMain.handle(IPC.ADD_CUSTOM_TOOL, (event, tool) => {
     if (!tool || !tool.name) return { error: 'Name is required' };
     if (tool.command) {
       const err = validateCommand(tool.command);
@@ -365,13 +366,13 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
     return { id: adapter.id, name: adapter.name };
   });
 
-  ipcMain.handle('remove-custom-tool', (event, toolId) => {
+  ipcMain.handle(IPC.REMOVE_CUSTOM_TOOL, (event, toolId) => {
     if (!toolId) return false;
     registry.removeCustom(toolId);
     return true;
   });
 
-  ipcMain.handle('edit-custom-tool', (event, { id, name, command, args }) => {
+  ipcMain.handle(IPC.EDIT_CUSTOM_TOOL, (event, { id, name, command, args }) => {
     if (!id) return false;
     if (command) {
       const err = validateCommand(command);
@@ -402,15 +403,15 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
   }
   function saveTemplates(t) { fs.writeFileSync(templatesFile, JSON.stringify(t, null, 2), 'utf8'); }
 
-  ipcMain.handle('list-templates', () => loadTemplates());
-  ipcMain.handle('save-template', (event, tpl) => {
+  ipcMain.handle(IPC.LIST_TEMPLATES, () => loadTemplates());
+  ipcMain.handle(IPC.SAVE_TEMPLATE, (event, tpl) => {
     const t = loadTemplates();
     const idx = t.findIndex(x => x.id === tpl.id);
     if (idx >= 0) t[idx] = tpl; else { tpl.id = `tpl-${Date.now()}`; t.push(tpl); }
     saveTemplates(t);
     return tpl;
   });
-  ipcMain.handle('delete-template', (event, id) => {
+  ipcMain.handle(IPC.DELETE_TEMPLATE, (event, id) => {
     saveTemplates(loadTemplates().filter(t => t.id !== id));
     return true;
   });
@@ -424,50 +425,50 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
   }
   function savePresets(p) { fs.writeFileSync(presetsFile, JSON.stringify(p, null, 2), 'utf8'); }
 
-  ipcMain.handle('list-presets', () => loadPresets());
-  ipcMain.handle('save-preset', (event, preset) => {
+  ipcMain.handle(IPC.LIST_PRESETS, () => loadPresets());
+  ipcMain.handle(IPC.SAVE_PRESET, (event, preset) => {
     const p = loadPresets();
     const idx = p.findIndex(x => x.id === preset.id);
     if (idx >= 0) p[idx] = preset; else { preset.id = `tpl-${Date.now()}`; p.push(preset); }
     savePresets(p);
     return preset;
   });
-  ipcMain.handle('delete-preset', (event, id) => {
+  ipcMain.handle(IPC.DELETE_PRESET, (event, id) => {
     savePresets(loadPresets().filter(p => p.id !== id));
     return true;
   });
 
   // === 会话 ===
 
-  ipcMain.handle('list-sessions', () => sessionManager.listSessions());
+  ipcMain.handle(IPC.LIST_SESSIONS, () => sessionManager.listSessions());
 
-  ipcMain.handle('search-sessions', (event, query) => sessionManager.searchSessions(query));
+  ipcMain.handle(IPC.SEARCH_SESSIONS, (event, query) => sessionManager.searchSessions(query));
 
-  ipcMain.handle('get-latest-session', () => {
+  ipcMain.handle(IPC.GET_LATEST_SESSION, () => {
     const session = sessionManager.getLatestSession();
     if (session) setCurrentSessionId(session.id);
     return session;
   });
 
-  ipcMain.handle('create-session', (event, name) => {
+  ipcMain.handle(IPC.CREATE_SESSION, (event, name) => {
     const s = sessionManager.createSession(name);
     setCurrentSessionId(s.id);
     return s;
   });
 
-  ipcMain.handle('load-session', (event, id) => {
+  ipcMain.handle(IPC.LOAD_SESSION, (event, id) => {
     const s = sessionManager.loadSession(id);
     if (s) setCurrentSessionId(id);
     return s;
   });
 
-  ipcMain.handle('delete-session', (event, id) => {
+  ipcMain.handle(IPC.DELETE_SESSION, (event, id) => {
     const r = sessionManager.deleteSession(id);
     if (getCurrentSessionId() === id) setCurrentSessionId(null);
     return r;
   });
 
-  ipcMain.handle('update-session-tags', (event, { sessionId, tags }) => {
+  ipcMain.handle(IPC.UPDATE_SESSION_TAGS, (event, { sessionId, tags }) => {
     const session = sessionManager.loadSession(sessionId);
     if (!session) return null;
     session.tags = tags;
@@ -476,7 +477,7 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
 
   // === 目录 ===
 
-  ipcMain.handle('select-directory', async () => {
+  ipcMain.handle(IPC.SELECT_DIRECTORY, async () => {
     const result = await dialog.showOpenDialog(getMainWindow(), { properties: ['openDirectory'] });
     if (result.canceled) return null;
     return result.filePaths[0];
