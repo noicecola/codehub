@@ -1,5 +1,40 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const { IPC } = require('./ipc-channels');
+
+// 硬编码所有 IPC 通道，避免模块加载问题
+const IPC = {
+  GET_TOOLS: 'get-tools',
+  BROADCAST_MESSAGE: 'broadcast-message',
+  STOP_TOOL: 'stop-tool',
+  RETRY_TOOL: 'retry-tool',
+  INSTALL_TOOL: 'install-tool',
+  CANCEL_INSTALL: 'cancel-install',
+  INSTALL_PROGRESS: 'install-progress',
+  GET_TOOL_VERSIONS: 'get-tool-versions',
+  GET_INSTALLABLE_TOOLS: 'get-installable-tools',
+  BATCH_INSTALL: 'batch-install',
+  STREAM_CHUNK: 'stream-chunk',
+  TOOL_DONE: 'tool-done',
+  READ_FILE: 'read-file',
+  EXPORT_SESSION: 'export-session',
+  ADD_CUSTOM_TOOL: 'add-custom-tool',
+  REMOVE_CUSTOM_TOOL: 'remove-custom-tool',
+  EDIT_CUSTOM_TOOL: 'edit-custom-tool',
+  LIST_TEMPLATES: 'list-templates',
+  SAVE_TEMPLATE: 'save-template',
+  DELETE_TEMPLATE: 'delete-template',
+  LIST_PRESETS: 'list-presets',
+  SAVE_PRESET: 'save-preset',
+  DELETE_PRESET: 'delete-preset',
+  LIST_SESSIONS: 'list-sessions',
+  SEARCH_SESSIONS: 'search-sessions',
+  GET_LATEST_SESSION: 'get-latest-session',
+  CREATE_SESSION: 'create-session',
+  LOAD_SESSION: 'load-session',
+  DELETE_SESSION: 'delete-session',
+  UPDATE_SESSION_TAGS: 'update-session-tags',
+  SESSION_UPDATED: 'session-updated',
+  SELECT_DIRECTORY: 'select-directory',
+};
 
 contextBridge.exposeInMainWorld('codehub', {
   getTools: () => ipcRenderer.invoke(IPC.GET_TOOLS),
