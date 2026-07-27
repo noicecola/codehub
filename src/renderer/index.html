@@ -40,23 +40,9 @@
     </aside>
 
     <div id="main">
-      <header id="toolbar">
-        <div id="toolbar-actions">
-          <div id="template-dropdown" class="dropdown hidden">
-            <div id="template-list"></div>
-          </div>
-          <button id="template-btn" class="tool-btn" title="消息模板"><span class="btn-icon">📝</span></button>
-          <button id="artifacts-btn" class="tool-btn" title="产物" style="display:none"><span class="btn-icon">📦</span></button>
-          <button id="compare-btn" class="tool-btn" title="对比">对比</button>
-          <button id="edit-tags-btn" class="tool-btn" title="标签"><span class="btn-icon">🏷️</span></button>
-          <button id="export-btn" class="tool-btn" title="导出"><span class="btn-icon">💾</span></button>
-          <select id="work-dir-select"><option value="">目录</option></select>
-          <button id="browse-dir-btn" class="tool-btn" title="选择目录"><span class="btn-icon">📁</span></button>
-        </div>
-      </header>
-
-      <main id="output-panel">
-        <div id="welcome-screen">
+      <div id="content-row">
+        <main id="output-panel">
+          <div id="welcome-screen">
           <div class="welcome-logo">C</div>
           <h2>CodeHub</h2>
           <p class="subtitle">多工具消息分发桌面端</p>
@@ -99,23 +85,36 @@
         </div>
       </main>
 
+      <aside id="action-rail">
+        <div id="template-dropdown" class="dropdown hidden">
+          <div id="template-list"></div>
+        </div>
+        <button id="template-btn" class="rail-btn" title="消息模板">📝</button>
+        <button id="artifacts-btn" class="rail-btn" title="产物" style="display:none">📦</button>
+        <button id="compare-btn" class="rail-btn" title="对比">⇄</button>
+        <button id="edit-tags-btn" class="rail-btn" title="标签">🏷️</button>
+        <button id="export-btn" class="rail-btn" title="导出">💾</button>
+        <div class="rail-divider"></div>
+        <select id="work-dir-select" class="rail-select" title="工作目录"><option value="">📁</option></select>
+        <button id="browse-dir-btn" class="rail-btn" title="选择目录">📂</button>
+        <div class="rail-divider"></div>
+        <button id="theme-toggle-btn" class="rail-btn" title="切换明暗模式">🌙</button>
+      </aside>
+      </div>
+
       <footer id="input-area">
-        <div id="tool-selector"></div>
+        <div id="tool-selector-row">
+          <span class="tools-count-badge" id="tools-count-badge">0</span>
+          <div id="tool-selector"></div>
+        </div>
         <div class="preset-bar" id="preset-bar">
           <!-- Dynamic preset buttons -->
         </div>
         <div class="input-wrapper">
           <textarea id="message-input" placeholder="输入消息... (Ctrl+Enter 发送)" rows="2"></textarea>
           <span class="char-count" id="char-count">0</span>
-        </div>
-        <div id="input-controls">
-          <div id="selected-tools-info">
-            <span class="tools-count-badge" id="tools-count-badge">0 个工具</span>
-          </div>
-          <div id="input-buttons">
-            <button id="send-btn" disabled>发送</button>
-            <button id="stop-btn" style="display:none">停止</button>
-          </div>
+          <button id="send-btn" class="input-send-btn" disabled>发送</button>
+          <button id="stop-btn" class="input-stop-btn" style="display:none">停止</button>
         </div>
       </footer>
     </div>

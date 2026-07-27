@@ -72,65 +72,23 @@ function showToolPanels() {
   const visiblePanels = Array.from(allPanels)
     .filter(p => state.selectedTools.has(p.id.replace('panel-', '')));
 
-  const masonry = visiblePanels.length > 4;
-  const cols = masonry ? 2 : (visiblePanels.length <= 2 ? visiblePanels.length : (visiblePanels.length === 3 ? 3 : 2));
-
-  if (masonry) {
-    const rows = Math.ceil(visiblePanels.length / cols);
-    const rowHeight = 330;
-    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    container.style.gridTemplateRows = `repeat(${rows}, ${rowHeight}px)`;
-    container.style.gridAutoRows = '';
-    container.style.alignContent = '';
-    container.style.overflowY = 'hidden';
-    track.classList.add('active');
-    initScrollbar();
-  } else {
-    const rows = Math.ceil(visiblePanels.length / cols);
-    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-    container.style.gridAutoRows = '';
-    container.style.alignContent = '';
-    container.style.overflowY = '';
-    track.classList.remove('active');
-    container.scrollTop = 0;
-  }
-
-  container.classList.toggle('cols-3', !masonry && visiblePanels.length === 3);
+  // 统一布局：1个面板单列，2+个面板双列，等高自适应
+  const cols = visiblePanels.length <= 1 ? 1 : 2;
+  container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  container.style.gridTemplateRows = '';
+  container.style.gridAutoRows = '1fr';
+  container.style.overflowY = 'auto';
+  track.classList.remove('active');
 
   allPanels.forEach(panel => {
     const toolId = panel.id.replace('panel-', '');
-    const selected = state.selectedTools.has(toolId);
-    panel.style.display = selected ? '' : 'none';
+    panel.style.display = state.selectedTools.has(toolId) ? '' : 'none';
     panel.classList.remove('span-full');
     const content = panel.querySelector('.tool-panel-content');
     if (content) {
       content.style.flex = '1';
       content.style.overflowY = 'auto';
       content.style.maxHeight = '';
-    }
-  });
-
-  if (!masonry && cols === 2 && visiblePanels.length % 2 === 1) {
-    visiblePanels[visiblePanels.length - 1].classList.add('span-full');
-  }
-
-  requestAnimationFrame(() => {
-    if (masonry) {
-      const track = document.getElementById('scrollbar-track');
-      const thumb = document.getElementById('scrollbar-thumb');
-      const content = document.getElementById('tool-panels');
-      const ratio = content.clientHeight / content.scrollHeight;
-      if (ratio >= 1) {
-        track.classList.remove('active');
-      } else {
-        track.classList.add('active');
-        const trackH = track.clientHeight;
-        const thumbH = Math.max(30, trackH * ratio);
-        thumb.style.height = thumbH + 'px';
-        thumb.style.top = '0px';
-        thumb.style.display = '';
-      }
     }
   });
 }

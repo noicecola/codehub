@@ -9,63 +9,14 @@
   z-index: 1;
 }
 
-/* === 工具栏 === */
-#toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: var(--space-sm) var(--space-lg);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  gap: var(--space-sm);
-}
-
-#toolbar-actions {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: center;
-}
-
-.tool-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tool-btn:hover { 
-  background: var(--border);
-  border-color: var(--accent);
-}
-
-.tool-btn .btn-icon {
-  font-size: 14px;
-}
-
-#work-dir-select {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-size: 12px;
-  max-width: 180px;
-  transition: var(--transition);
-}
-
-#work-dir-select:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
 /* === 输出面板 === */
+#content-row {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
 #output-panel {
   flex: 1;
   overflow: hidden;
@@ -73,7 +24,76 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
+
+/* === 右侧纵向工具栏 === */
+#action-rail {
+  width: 44px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  z-index: 5;
+}
+
+/* 主题切换按钮固定在底部 */
+#theme-toggle-btn {
+  margin-top: auto;
+}
+
+.rail-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rail-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.08);
+}
+
+.rail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-xs) 0;
+}
+
+.rail-select {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.rail-select:hover { border-color: var(--accent); color: var(--accent); }
+.rail-select:focus { outline: none; border-color: var(--accent); }
 
 /* === Welcome Screen === */
 #welcome-screen {
@@ -270,13 +290,13 @@
 
 .tool-panels {
   display: grid;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
   background: var(--bg-primary);
   flex: 1;
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
-  padding: var(--space-md);
+  padding: var(--space-sm);
 }
 
 /* Scrollbar track */
@@ -369,7 +389,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -463,10 +483,10 @@
 
 /* Panel content */
 .tool-panel-content {
-  padding: var(--space-md);
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  padding: var(--space-sm);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--text-primary);
   min-height: 0;
   overflow-y: auto;
@@ -581,20 +601,20 @@
   margin: 8px 0 4px 0;
   padding: 0 4px;
   animation: fadeIn 0.2s ease;
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .reply-body {
   flex: 1;
   min-width: 0;
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
   user-select: text;
   cursor: text;
   background: var(--bg-tertiary);
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 4px 12px 12px 12px;
   border: 1px solid var(--border);
 }
@@ -620,7 +640,7 @@
 }
 
 .panel-reply pre {
-  background: var(--bg-primary);
+  background: var(--code-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 8px 12px;
@@ -666,7 +686,15 @@
 .panel-reply th { background: var(--bg-tertiary); font-weight: 600; }
 
 .panel-reply:last-child { border-bottom: none; margin-bottom: 0; }
-.panel-reply-error { color: var(--danger); }
+.panel-reply-error {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+.panel-reply-error .reply-body {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
 
 .panel-stats {
   font-size: 10px;

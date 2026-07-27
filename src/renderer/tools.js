@@ -180,7 +180,7 @@ function syncToolSelectorOrder() {
 function updateSelectedInfo() {
   const badge = document.getElementById('tools-count-badge');
   if (badge) {
-    badge.textContent = state.selectedTools.size === 0 ? '0 个工具' : `${state.selectedTools.size} 个工具`;
+    badge.textContent = state.selectedTools.size;
   }
 }
 
@@ -494,8 +494,22 @@ function renderPresetBar() {
   if (!container) return;
   const presets = window.CodeHubState?.presets || [];
   if (presets.length === 0) { container.style.display = 'none'; return; }
-  container.style.display = 'flex';
-  container.innerHTML = presets.slice(0, 4).map(preset => `
+
+  // 插入折叠切换按钮（如果尚未插入）
+  let toggle = document.getElementById('preset-toggle');
+  if (!toggle) {
+    toggle = document.createElement('button');
+    toggle.id = 'preset-toggle';
+    toggle.className = 'preset-toggle';
+    toggle.textContent = '⚡ 预设';
+    toggle.addEventListener('click', () => {
+      container.classList.toggle('expanded');
+      toggle.textContent = container.classList.contains('expanded') ? '⚡ 收起' : '⚡ 预设';
+    });
+    container.parentNode.insertBefore(toggle, container);
+  }
+
+  container.innerHTML = presets.slice(0, 6).map(preset => `
     <button class="preset-btn" data-preset-id="${preset.id}">
       <span class="preset-icon">⚡</span>${preset.name}
     </button>

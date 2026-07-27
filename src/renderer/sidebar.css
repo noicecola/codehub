@@ -331,14 +331,14 @@
 
 /* Footer */
 .sidebar-footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-xs);
-  padding: var(--space-md);
+  padding: var(--space-sm);
   border-top: 1px solid var(--border);
 }
 
 .sidebar-tool-btn {
-  flex: 1;
   padding: var(--space-sm) var(--space-xs);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -347,6 +347,8 @@
   font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: var(--transition);
   display: flex;
   align-items: center;

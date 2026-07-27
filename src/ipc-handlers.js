@@ -124,6 +124,10 @@ function registerHandlers({ registry, router, sessionManager, fileTracker, getMa
           const elapsed = Date.now() - startTime;
           log(`${toolId} done, code=${result.exitCode}, ${elapsed}ms`);
           result.elapsed = elapsed;
+          // 非零退出码视为错误，确保前端展示错误状态
+          if (result.exitCode !== 0 && !result.error) {
+            result.error = result.content || `Process exited with code ${result.exitCode}`;
+          }
           results[toolId] = result;
 
           await snapshotPromise;

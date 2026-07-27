@@ -1,36 +1,36 @@
 # CodeHub
 
-Multi-tool message dispatch desktop app — Send the same message to multiple AI coding tools simultaneously, execute in parallel, and compare results.
+Send the same message to multiple AI coding tools simultaneously, execute in parallel, and compare results — all in one desktop app.
+
+[中文说明](#中文说明)
 
 ## Features
 
 ### Core
-- **Multi-tool parallel**: Send messages to 8 built-in AI coding tools at once, results appear as each tool finishes
-- **Streaming output**: Real-time display of each tool's response process
-- **Result comparison**: Side-by-side comparison of different tools' outputs
-- **Artifact tracking**: Automatically detect file changes (create/modify/delete) after tool execution
-- **Session management**: Save/load/export conversation history (JSON and Markdown)
-- **Message templates**: Built-in templates (explain code, code review, refactor, write tests, debug)
-- **Custom tools**: Support adding CLI command or HTTP API interface tools
+- **Multi-tool parallel dispatch** — Send one message to 8+ AI coding tools at once; results stream in as each tool finishes
+- **Real-time streaming** — Watch each tool's response as it's generated
+- **Side-by-side comparison** — Compare outputs from different tools in one view
+- **Artifact tracking** — Automatically detects file changes (created/modified/deleted) after tool execution
+- **Session management** — Save, load, search, and export conversation history (Markdown / JSON)
+- **Message templates** — Built-in templates (explain code, code review, refactor, write tests, debug)
+- **Custom tools** — Add any CLI command or HTTP API as a new tool
 
 ### UI/UX
-- **Markdown rendering**: Output supports Markdown format + code syntax highlighting (15 languages)
-- **User/AI avatars**: Message bubbles with role avatars, user right-aligned, AI left-aligned
-- **Message round separators**: Timestamp dividers between each conversation round
-- **Border breathing animation**: Border brightness pulses during tool execution, each tool has its own color
-- **Panel drag-to-reorder**: Drag panels to adjust order
-- **Colored borders**: Each tool has its own color (red/blue/green/orange/purple/teal/brown)
-- **Timing stats**: Each tool shows response time (seconds) and output length (characters)
+- **Dark / Light mode** — One-click toggle, remembers your preference, follows system setting on first launch
+- **Markdown rendering** — Full Markdown support with syntax highlighting for 15+ languages
+- **Tool-colored panels** — Each tool gets its own border color with a breathing animation while running
+- **Compact layout** — Right-side action rail, inline send button, collapsible presets — maximizes conversation area
+- **Drag-to-reorder** — Rearrange tool panels by dragging
+- **Timing stats** — Each panel shows response time and output length
 
 ### Interaction
-- **Retry single tool**: Retry button appears on failed panels, re-run individually
-- **Error detail expand**: Long error messages can be collapsed/expanded
-- **Message draft**: Auto-saves unsent input when switching sessions
-- **File drag & drop**: Drag file paths into the input area
-- **Large output optimization**: Auto-truncates at 8k characters, click "Show all" to expand
-- **Session search**: Search session names, tags, and conversation content
-- **Tool presets**: Save common tool combinations, switch with one click
-- **Session tags**: Add tags to sessions for categorization
+- **Retry failed tools** — One-click retry on individual tool panels
+- **Collapsible errors** — Long error messages are collapsed with an expand toggle
+- **File drag & drop** — Drag file paths directly into the input area
+- **Large output handling** — Auto-truncates at 8k characters with a "show all" button
+- **Session search** — Search by session name, tags, or conversation content
+- **Tool presets** — Save common tool combinations for one-click switching
+- **Session tags** — Tag sessions for categorization (`#frontend`, `#debug`, etc.)
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
@@ -39,172 +39,142 @@ Multi-tool message dispatch desktop app — Send the same message to multiple AI
 | `Ctrl+N` | New session |
 | `Ctrl+K` | Search sessions |
 | `Ctrl+B` | Toggle sidebar |
+| `/` | Focus search |
 
-### Data Management
-- **Session export**: Markdown / JSON format
-- **Auto session cleanup**: Automatically cleans up sessions older than 30 days
-- **Tag search**: Filter sessions by tags
-- **Content search**: Search keywords in conversation history
+## Supported Tools
 
-### Technical
-- **Config-driven architecture**: Adding new tools only requires one line in `adapters.config.js`
-- **Unit tests**: 34 tests covering core modules
-- **CSS modularization**: Styles split into 5 files by functionality
-- **Electron security**: `contextIsolation: true`, all IPC via preload bridge
+| Tool | Command | Install |
+|------|---------|---------|
+| Claude Code | `claude` | [docs.anthropic.com](https://docs.anthropic.com/claude-code) |
+| MiMo Code | `mimo` | [github.com/XiaomiMiMo/MiMo-Code](https://github.com/XiaomiMiMo/MiMo-Code) |
+| Codex CLI | `codex` | [github.com/openai/codex](https://github.com/openai/codex) |
+| Gemini CLI | `gemini` | [github.com/google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) |
+| Copilot CLI | `gh copilot` | [github.com/features/copilot](https://github.com/features/copilot) |
+| OpenCode | `opencode` | [github.com/opencode-ai/opencode](https://github.com/opencode-ai/opencode) |
+| Kilo Code | `kilo` | [github.com/Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
+| Qwen Code | `qwen` | [help.aliyun.com](https://help.aliyun.com/zh/model-studio/) |
 
-## Architecture
+Uninstalled tools show as "Not installed" and are silently skipped — no impact on other tools.
 
-```
-src/
-├── main.js              # Electron main process (IPC handling)
-├── preload.js           # Context bridge (secure API exposure)
-├── session-manager.js   # Session persistence (JSON files)
-├── file-tracker.js      # File change tracking (snapshot + diff)
-├── core/
-│   ├── adapters.config.js # Adapter config table (add new tools here)
-│   ├── adapter.js       # Adapter (config-driven factory)
-│   ├── transport.js     # Communication layer (CLI / HTTP)
-│   ├── parser.js        # Output parsing (Claude/MiMo/plain text)
-│   ├── registry.js      # Adapter registry
-│   └── router.js        # Tool stop control
-├── components/
-│   ├── modal.js         # Modal management
-│   ├── toast.js         # Toast notifications
-│   └── diff-viewer.js   # Result comparison view
-└── renderer/
-    ├── index.html       # UI structure
-    ├── state.js         # Global state
-    ├── app.js           # Entry point + event binding
-    ├── tools.js         # Tool selector + management
-    ├── messages.js      # Message sending
-    ├── output.js        # Output panel management
-    ├── modals.js        # Modal management
-    ├── sessions.js      # Session sidebar
-    ├── base.css         # Variables + layout
-    ├── sidebar.css      # Sidebar styles
-    ├── panels.css       # Panel styles
-    ├── input.css        # Input area styles
-    └── modals.css       # Modal styles
-```
+## Quick Start
 
-## Installation
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- At least one AI coding tool from the table above
+
+### Install & Run
 
 ```bash
+git clone https://github.com/yourname/codehub.git
+cd codehub
 npm install
-```
 
-## Running
-
-```bash
-# Normal start
+# Launch
 npm start
 
 # Development mode (auto-opens DevTools)
 npm run dev
 ```
 
-## Building
+### Build
 
 ```bash
-# macOS
-npm run build
-
-# Windows
-npm run build:win
-
-# Linux
-npm run build:linux
+npm run build          # macOS (.dmg)
+npm run build:win     # Windows (.exe)
+npm run build:linux    # Linux (.AppImage)
 ```
 
-Build output goes to the `dist/` directory.
-
-## Prerequisites
-
-At least one AI coding tool must be installed:
-
-| Tool | Command | Install |
-|------|---------|---------|
-| Claude Code | `claude` | [docs.anthropic.com](https://docs.anthropic.com/claude-code) |
-| MiMo Code | `mimo` | [github.com/xiaomi/mimo-code](https://github.com/xiaomi/mimo-code) |
-| Codex CLI | `codex` | [github.com/openai/codex](https://github.com/openai/codex) |
-| Gemini CLI | `gemini` | [github.com/google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) |
-| Copilot CLI | `gh copilot` | [github.com/features/copilot](https://github.com/features/copilot) |
-| OpenCode | `opencode` | [github.com/opencode-ai/opencode](https://github.com/opencode-ai/opencode) |
-| Kilo Code | `kilo` | [github.com/Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
-| Qwen Code | `qwen` | [Qwen docs](https://help.aliyun.com/zh/model-studio/) |
-| Trae | `trae` | [trae.ai](https://trae.ai) |
-
-Uninstalled tools will show as "Not installed" and won't affect other tools.
+Build output goes to `dist/`.
 
 ## Usage
 
-1. Select tools in the bottom tool selector
-2. Choose a working directory (optional)
-3. Type a message, press `Ctrl+Enter` or click "Send"
-4. View parallel outputs from each tool
-5. Use the "Compare" button to view results side by side
-6. Use the "Artifacts" button to view file changes
+1. Pick tools from the bottom tool bar (checkboxes)
+2. Optionally select a working directory (📁 button on the right rail)
+3. Type a message → `Ctrl+Enter` or click Send
+4. Watch parallel outputs stream in from each tool
+5. Click **⇄ Compare** to view results side by side
+6. Click **📦 Artifacts** to inspect file changes
 
-### Example: Sending to all 9 tools simultaneously
+### Adding a Custom Tool
+
+Click **⚙️ Tools** in the sidebar → fill in:
+
+- **CLI tool**: name + command (e.g. `python3`) + optional args
+- **HTTP tool**: name + URL + endpoint path (default `/chat`)
+
+Custom tools are saved to `~/Library/Application Support/codehub/custom-tools.json`.
+
+## Architecture
 
 ```
-Input: Implement a quicksort algorithm in Python
-
-Output panels:
-┌─────────────────┬─────────────────┬─────────────────┐
-│ Claude Code     │ MiMo Code       │ Codex CLI       │
-│ [streaming...]  │ [streaming...]  │ [streaming...]  │
-│                 │                 │                 │
-├─────────────────┼─────────────────┼─────────────────┤
-│ Gemini CLI      │ Copilot CLI     │ OpenCode        │
-│ [streaming...]  │ [streaming...]  │ [streaming...]  │
-│                 │                 │                 │
-├─────────────────┼─────────────────┼─────────────────┤
-│ Kilo Code       │ Qwen Code       │ Trae            │
-│ [streaming...]  │ [streaming...]  │ [streaming...]  │
-│                 │                 │                 │
-└─────────────────┴─────────────────┴─────────────────┘
+src/
+├── main.js                # Electron main process
+├── preload.js             # Secure context bridge
+├── ipc-channels.js        # IPC channel constants
+├── ipc-handlers.js        # All IPC handlers
+├── session-manager.js     # Session persistence + LRU cache
+├── file-tracker.js        # File change detection (snapshot + diff)
+├── core/
+│   ├── adapters.config.js # Tool config table ← add new tools here
+│   ├── adapter.js         # Config-driven adapter factory
+│   ├── transport.js       # CLI / HTTP transport layer
+│   ├── parser.js          # Output parsers (Claude / MiMo / Codex / plain text)
+│   ├── registry.js        # Adapter registry
+│   └── router.js          # Tool stop control
+├── components/
+│   ├── modal.js           # Modal management
+│   ├── toast.js           # Toast notifications
+│   └── diff-viewer.js     # Result comparison view
+└── renderer/
+    ├── index.html         # UI structure
+    ├── app.js             # Entry point + event binding
+    ├── state.js           # Global state
+    ├── tools.js           # Tool selector + panel management
+    ├── messages.js        # Message sending + Markdown rendering
+    ├── output.js          # Output panel layout + streaming
+    ├── sessions.js        # Session sidebar
+    ├── modals.js          # Modal logic
+    ├── base.css           # CSS variables (dark/light themes)
+    ├── sidebar.css        # Sidebar styles
+    ├── panels.css         # Panel + action rail styles
+    ├── input.css          # Input area styles
+    └── modals.css         # Modal styles
 ```
 
-### Tool Presets
+### Config-driven design
 
-Save common tool combinations and switch with one click:
+Adding a new AI tool requires **one entry** in `adapters.config.js`:
 
-- **Frontend**: Claude Code + Codex CLI + Gemini CLI
-- **Backend**: Claude Code + MiMo Code + Qwen Code
-- **All tools**: All 9 tools
-- **Custom**: Any tool combination
+```js
+{
+  id: 'my-tool',
+  name: 'My Tool',
+  command: 'my-tool',
+  args: ['--json'],
+  messageAsArg: true,
+  parser: 'text',
+  installCommand: 'npm install -g my-tool',
+  installUrl: 'https://example.com',
+}
+```
 
-Presets are stored at `~/Library/Application Support/codehub/presets.json`
+No changes to adapter, transport, parser, or registry code.
 
-### Session Tags
+## Testing
 
-Add tags to sessions for easy categorization:
+```bash
+npm test
+```
 
-- `#frontend` `#backend` `#debug` `#refactor`
-- Search automatically matches tag content
-
-## Custom Tools
-
-Click the "Tools" button in the sidebar to add custom tools:
-
-### CLI Command
-- **Name**: Display name
-- **Command**: CLI command (e.g., `python3`, `node`)
-- **Args**: Command-line arguments (optional)
-
-### HTTP API
-- **Name**: Display name
-- **URL**: API address (e.g., `http://localhost:8080`)
-- **Path**: Endpoint path (default `/chat`)
-
-Custom tools are stored at `~/Library/Application Support/codehub/custom-tools.json`
-
-## Export
-
-Supports exporting sessions as:
-- **Markdown**: Readable conversation records
-- **JSON**: Complete structured data
+80 unit tests covering:
+- Parsers (Claude / MiMo / Codex / plain text / streaming buffer)
+- Transport (CLI stdin/arg modes, HTTP, process lifecycle)
+- Session manager (CRUD, LRU cache, search)
+- File tracker (create/modify/delete detection, depth limit)
+- IPC handlers (security: command injection, path traversal)
+- Adapter config validation
+- Retry logic (timeout, EPIPE, ENOENT classification)
 
 ## Data Storage
 
@@ -214,20 +184,23 @@ Supports exporting sessions as:
 | Custom tools | `~/Library/Application Support/codehub/custom-tools.json` |
 | Presets | `~/Library/Application Support/codehub/presets.json` |
 | Templates | `~/Library/Application Support/codehub/templates.json` |
+| Window state | `~/Library/Application Support/codehub/window-state.json` |
 
-## Testing
+## Tech Stack
 
-```bash
-npm test
-```
+- **Electron 35** — cross-platform desktop framework
+- **Pure JavaScript (CommonJS)** — zero runtime dependencies
+- **electron-builder** — packaging for macOS / Windows / Linux
+- **marked + highlight.js** — Markdown rendering with syntax highlighting
+- **Node test runner** — built-in `node --test`, no test framework needed
 
-34 unit tests covering:
-- Parser (Claude/MiMo/plain text/streaming)
-- Transport (CLI/HTTP)
-- Router (tool stop)
-- FileTracker (file change detection)
-- Adapter Config (config table validation)
+## Contributing
+
+1. Fork the repo
+2. Add your tool to `src/core/adapters.config.js`
+3. Run `npm test` to verify nothing breaks
+4. Submit a PR
 
 ## License
 
-MIT
+[MIT](LICENSE)

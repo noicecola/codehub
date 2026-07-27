@@ -2,6 +2,7 @@
   "name": "codehub",
   "version": "1.0.0",
   "description": "Multi-tool message dispatch desktop app",
+  "license": "MIT",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

@@ -57,6 +57,7 @@ class ToolAdapter {
   async run(message, workDir, onChunk) {
     const parser = new StreamParser(this.streamParser);
     let fullContent = '';
+    let rawStderr = ''; // 单独收集 stderr 原文，解析失败时回退
 
     const handleChunk = (data) => {
       const texts = parser.feed(data);
@@ -66,10 +67,15 @@ class ToolAdapter {
       });
     };
 
+    const handleStderr = (data) => {
+      rawStderr += data;
+      handleChunk(data); // 仍然尝试解析
+    };
+
     const sendOptions = {
       workDir,
       onStdout: handleChunk,
-      onStderr: handleChunk,
+      onStderr: handleStderr,
       onChunk: handleChunk,
     };
 
@@ -93,6 +99,12 @@ class ToolAdapter {
       fullContent += t;
       if (onChunk) onChunk(t);
     });
+
+    // 执行失败但解析后无内容时，回退到原始 stderr 提示用户
+    if (result.exitCode !== 0 && !fullContent && rawStderr) {
+      fullContent = rawStderr.trim();
+      return { content: fullContent, exitCode: result.exitCode, error: fullContent };
+    }
 
     return { content: fullContent, exitCode: result.exitCode };
   }

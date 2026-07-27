@@ -5,3 +5,12 @@ out/
 *.log
 snake.html
 progress.json
+
+# MiMoCode 运行时产物
+src/.mimocode/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

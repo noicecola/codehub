@@ -64,7 +64,7 @@ class CLITransport {
       });
 
       try {
-        if (!this.messageAsArg && message && stdin.writable) {
+        if (!finalMessageAsArg && message && stdin.writable) {
           stdin.write(message + '\n');
         }
       } catch (err) {

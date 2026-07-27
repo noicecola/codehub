@@ -177,6 +177,16 @@ document.addEventListener('keydown', (e) => {
 if (typeof renderToolStatusBar === 'function') renderToolStatusBar();
 if (typeof renderPresetBar === 'function') renderPresetBar();
 
+// === textarea 自动扩展 ===
+(function autoResizeInput() {
+  const input = document.getElementById('message-input');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+})();
+
 // === 快捷键设置 ===
 
 function renderShortcutsModal() {
@@ -251,3 +261,28 @@ if (sidebarFooter) {
   shortcutsBtn.addEventListener('click', renderShortcutsModal);
   sidebarFooter.appendChild(shortcutsBtn);
 }
+
+// === 明暗主题切换 ===
+(function initThemeToggle() {
+  const btn = document.getElementById('theme-toggle-btn');
+  if (!btn) return;
+
+  // 从 localStorage 读取上次选择，默认跟随系统偏好
+  const saved = localStorage.getItem('codehub-theme');
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  const theme = saved || (prefersLight ? 'light' : 'dark');
+  applyTheme(theme);
+
+  btn.addEventListener('click', () => {
+    const current = document.documentElement.dataset.theme || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    localStorage.setItem('codehub-theme', next);
+  });
+
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    btn.textContent = t === 'dark' ? '🌙' : '☀️';
+    btn.title = t === 'dark' ? '切换到亮色模式' : '切换到暗色模式';
+  }
+})();
