@@ -6,8 +6,6 @@ Send the same message to multiple AI coding tools simultaneously, execute in par
 
 ![Light Mode](docs/screenshots/light-mode.png)
 
-[中文说明](#中文说明)
-
 ## Features
 
 ### Core
@@ -70,7 +68,7 @@ Uninstalled tools show as "Not installed" and are silently skipped — no impact
 ### Install & Run
 
 ```bash
-git clone https://github.com/yourname/codehub.git
+git clone https://github.com/noicecola/codehub.git
 cd codehub
 npm install
 
