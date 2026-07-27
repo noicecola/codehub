@@ -2,6 +2,10 @@
 
 Send the same message to multiple AI coding tools simultaneously, execute in parallel, and compare results — all in one desktop app.
 
+![Dark Mode](docs/screenshots/dark-mode.png)
+
+![Light Mode](docs/screenshots/light-mode.png)
+
 [中文说明](#中文说明)
 
 ## Features
